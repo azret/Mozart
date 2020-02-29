@@ -1,0 +1,9 @@
+##
+
+*.ignore
+*.okurrr
+*.vocab
+/src/obj/Debug
+*.user
+/bin
+/.vs
