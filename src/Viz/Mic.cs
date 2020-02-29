@@ -41,7 +41,7 @@ partial class App {
         }
         app.Mic?.UnMute();
         app.StartWin32Window<Mic32>(
-            onDrawMicFastFourierTransformPure, () => app.Mic, "Fast Fourier Transform (Mic)",
+            onDrawMicFastFourierTransform, () => app.Mic, "Fast Fourier Transform (Mic)",
             Color.Black,
             app.onKeyDown);
         return false;
@@ -87,9 +87,8 @@ partial class App {
         var wavOutFile = Path.GetFullPath(Path.ChangeExtension(inFile, ".g.wav"));
 
         Console.Write($"\r\nSynthesizing...\r\n\r\n");
-        var data = Wav.Synthesize(inWav)
-            .ToArray();
-        Console.Write($"Ready!\r\n\r\n");
+
+        var data = Wav.Synthesize(inWav);
 
         foreach (var it in data) {
             var fft = Complex.ShortTimeFourierTransform(
@@ -100,17 +99,11 @@ partial class App {
             Print.Dump(fft, Wav._hz);
 
             // Print.Dump(fft);
-
-            foreach (var f in fft) {
-                var z = System.Audio.Midi.FromFastFourierTransform(f, Wav._hz);
-                Chord c = new Chord() {
-                    Frequency = z,
-                    Seconds = (float)Math.Round((float)f.Length / Wav._hz, 4),
-                };
-            }
         }
 
         Wav.Write(wavOutFile, data);
+
+        Console.Write($"\r\nReady!\r\n\r\n");
 
         Microsoft.Win32.WinMM.PlaySound(wavOutFile,
             IntPtr.Zero,
@@ -129,7 +122,7 @@ partial class App {
 
         Canvas.Fill(Canvas._bgColor);
 
-        var data = mic.ReadData();
+        var data = mic.CH1();
 
         Debug.Assert(data.Length == samples);
 
@@ -139,13 +132,13 @@ partial class App {
 
         Canvas.Line((x, width) => Color.FromArgb(60, 60, 60), (x, width) => {
             int i = linear(x, width, data.Length);
-            return data[i].CH1;
+            return data[i];
         });
 
         Canvas.Line((x, width) => Color.Orange, (x, width) => {
             int i = linear(x, width, data.Length);
             return SigQ.f(Shapes.Harris(i, data.Length)
-                * data[i].CH1) - 0.5;
+                * data[i]) - 0.5;
         });
 
         double duration
@@ -154,7 +147,7 @@ partial class App {
         Canvas.TopLeft = $"{samples} @ {mic.Hz}Hz = {duration}s";
         Canvas.TopRight = $"{phase:N3}s";
     }
-
+    /*
     static void onDrawMicMidi(Surface2D Canvas, float phase, Mic32 mic) {
         Canvas.Fill(Canvas._bgColor);
 
@@ -329,6 +322,7 @@ partial class App {
         Canvas.BottomLeft = $"{h}Hz";
         Canvas.BottomRight = $"{Nyquis}Hz";
     }
+    */
 
     static void onDrawMicFastFourierTransform(Surface2D Canvas, float phase, Mic32 mic) {
         int samples = mic.Samples;
@@ -341,53 +335,54 @@ partial class App {
 
         Canvas.Fill(Canvas._bgColor);
 
-        var data = mic.ReadData();
+        var ch1 = mic.CH1();
 
-        Debug.Assert(data.Length == samples);
+        Debug.Assert(ch1.Length == samples);
 
         int linear(float val, float from, float to) {
             return (int)(val * to / from);
         }
 
-        float[] re = new float[samples];
-        float[] im = new float[samples];
+        Func<int, int, double> envelope = null;
 
-        for (int i = 0; i < samples; i++) {
-            var envelope
-                = Shapes.Hann(i, samples);
+        var fft = new Complex[samples];
 
-            re[i] = (float)(data[i].CH1 * envelope);
+        for (int s = 0; s < samples; s++) {
+            float A = envelope != null
+                ? (float)envelope(s, samples)
+                : 1.0f;
+            fft[s].Re = A *
+                ch1[s];
         }
 
         Complex.FastFourierTransform(
-            re,
-            im,
+            fft,
             +1);
 
-        double reNorm = 0;
-
-        for (int i = 0; i < samples; i++) {
-            re[i] = (float)Math.Sqrt((re[i] * re[i]) + (im[i] * im[i]));
-
-            reNorm = Math.Max(reNorm,
-                re[i]);
-        }
-
-        if (reNorm > 0) {
-            reNorm = 1 / reNorm;
-        }
-
-        for (int i = 0; i < samples; i++) {
-            re[i] = (float)(re[i] * reNorm);
-        }
+        // double reNorm = 0;
+        // 
+        // for (int i = 0; i < samples; i++) {
+        //     re[i] = (float)Math.Sqrt((re[i] * re[i]) + (im[i] * im[i]));
+        // 
+        //     reNorm = Math.Max(reNorm,
+        //         re[i]);
+        // }
+        // 
+        // if (reNorm > 0) {
+        //     reNorm = 1 / reNorm;
+        // }
+        // 
+        // for (int i = 0; i < samples; i++) {
+        //     re[i] = (float)(re[i] * reNorm);
+        // }
 
         Canvas.Line(
             (x, width) => Color.Orange,
-            (x, width) => SigQ.f(re[linear(x, width, samples / 2)]) - 0.5, true
+            (x, width) => SigQ.f(fft[linear(x, width, samples / 2)].Magnitude) - 0.5, true
         );
         Canvas.Line(
             (x, width) => Color.Gray,
-            (x, width) => -(SigQ.f(re[linear(x, width, samples / 2)]) - 0.5), true
+            (x, width) => -(SigQ.f(fft[linear(x, width, samples / 2)].Magnitude) - 0.5), true
         );
 
         double duration

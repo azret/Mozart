@@ -4,19 +4,19 @@
     using Microsoft.Win32;
 
     public sealed class Mic32 : IDisposable {
-        public struct Stereo {
-            public float CH1;
-            public float CH2;
-        }
-
         private object _lock = new object();
         private IntPtr _hwih;
         private WinMM.WaveInProc _hwiproc;
         private int _cc;
 
         public Mic32(int cc, int nSamplesPerSec, Action<Mic32, IntPtr> onReady) {
+            var m = (int)Math.Log(cc, 2);
+            if (cc <= 0 || Math.Pow(2, m) != cc || cc > nSamplesPerSec) {
+                throw new ArgumentException();
+            }
             this._cc = cc;
-            this._data = new Stereo[cc];
+            this._CH1 = new float[cc];
+            this._CH2 = new float[cc];
             this._wfx = new WinMM.WaveFormatEx();
             this._wfx.wBitsPerSample = 16;
             this._wfx.nChannels = 2;
@@ -33,23 +33,24 @@
             });
         }
 
-        Stereo[] _data;
+        float[] _CH1;
+        float[] _CH2;
 
         public unsafe void CaptureData(WaveHeader* pwh, short* psData) {
             lock (_lock) {
                 for (int s = 0; s < _cc; s++) {
                     float ch1 = (psData[(s * Channels)] / 32767.0f),
                         ch2 = (psData[(s * Channels) + 1] / 32767.0f);
-                    _data[s].CH1 = (float)ch1;
-                    _data[s].CH2 = (float)ch2;
+                    _CH1[s] = (float)ch1;
+                    _CH2[s] = (float)ch2;
                 }
             }
         }
 
-        public Stereo[] ReadData() {
-            Stereo[] local;
+        public float[] CH1() {
+            float[] local;
             lock (_lock) {
-                local = (Stereo[])_data.Clone();
+                local = (float[])_CH1.Clone();
             }
             return local;
         }

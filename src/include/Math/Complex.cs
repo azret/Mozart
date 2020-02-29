@@ -30,34 +30,26 @@ namespace System {
                 throw new ArgumentException();
             }
             for (int e = 0; e < data.Length; e += samples) {
-                float[] re = new float[samples],
-                    im = new float[samples];
+                Complex[] fft = new Complex[samples];
                 if (e + samples <= data.Length) {
                     for (int s = 0; s < samples; s++) {
                         float A = envelope != null
                             ? (float)envelope(s, samples)
                             : 1.0f;
-                        re[s] = A *
+                        fft[s].Re = A *
                             data[s + e];
                     }
                 }
                 FastFourierTransform(
-                    re,
-                    im,
+                    fft,
                     +1);
-                Complex[] vec = new Complex[samples];
-                for (int s = 0; s < vec.Length; s++) {
-                    vec[s].Re = re[s];
-                    vec[s].Im = im[s];
-                }
-                yield return vec;
+                yield return fft;
             }
         }
     }
     public partial struct Complex {
-        public static void FastFourierTransform(float[] re, float[] im, short dir) {
-            Debug.Assert(re.Length == im.Length);
-            int n = re.Length,
+        public static void FastFourierTransform(Complex[] fft, short dir) {
+            int n = fft.Length,
                     m = (int)Math.Log(n, 2);
             if (Math.Pow(2, m) != n) {
                 throw new InvalidOperationException();
@@ -66,12 +58,12 @@ namespace System {
                     j = 0;
             for (int i = 0; i < n - 1; i++) {
                 if (i < j) {
-                    float tx = re[i],
-                        ty = im[i];
-                    re[i] = re[j];
-                        im[i] = im[j];
-                    re[j] = tx;
-                        im[j] = ty;
+                    float tx = fft[i].Re,
+                        ty = fft[i].Im;
+                    fft[i].Re = fft[j].Re;
+                    fft[i].Im = fft[j].Im;
+                    fft[j].Re = tx;
+                    fft[j].Im = ty;
                 }
                 int k = half;
                 while (k <= j) {
@@ -91,12 +83,12 @@ namespace System {
                 for (j = 0; j < l1; j++) {
                     for (int i = j; i < n; i += l2) {
                         int i1 = i + l1;
-                        float t1 = u1 * re[i1] - u2 * im[i1],
-                            t2 = u1 * im[i1] + u2 * re[i1];
-                        re[i1] = re[i] - t1;
-                            im[i1] = im[i] - t2;
-                        re[i] += t1;
-                            im[i] += t2;
+                        float t1 = u1 * fft[i1].Re - u2 * fft[i1].Im,
+                            t2 = u1 * fft[i1].Im + u2 * fft[i1].Re;
+                        fft[i1].Re = fft[i].Re - t1;
+                        fft[i1].Im = fft[i].Im - t2;
+                        fft[i].Re += t1;
+                        fft[i].Im += t2;
                     }
                     float z = u1 * c1 - u2 * c2;
                     u2 = u1 * c2 + u2 * c1;
@@ -110,8 +102,8 @@ namespace System {
             }
             if (dir == 1) {
                 for (int i = 0; i < n; i++) {
-                    re[i] /= n;
-                    im[i] /= n;
+                    fft[i].Re /= n;
+                    fft[i].Im /= n;
                 }
             }
         }

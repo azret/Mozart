@@ -30,58 +30,103 @@ partial class App {
     static void onDrawFrame(Surface2D Canvas, float phase, Stereo[] wav) {
         Canvas.Fill(Color.Black);
 
+        int samples = 1024;
+
+        Complex[] fft = new Complex[samples];
+
+        for (int s = 0; s < samples; s++) {
+            var ampl =
+                0.7 * Math.Cos(220 * 2d * Math.PI * s * (1d / 44100) + phase);
+            ampl +=
+                .2 * Math.Cos(440 * 2d * Math.PI * s * (1d / 44100) + phase);
+            ampl +=
+                0.3 * Math.Cos(880 * 2d * Math.PI * s * (1d / 44100) + phase);
+            ampl /= 3;
+            fft[s].Re = (float)ampl;
+        }
+
+        int linear(float val, float from, float to) {
+            return (int)(val * to / from);
+        }
+
         Canvas.Line((x, width) => Color.Orange, (x, width) => {
-            var amp =
-                Math.Cos(440 * 2d * Math.PI * x * (1d / 44100) + phase);
-            return amp;
+            int i = linear(x, width, fft.Length);
+            return fft[i].Re;
         });
 
-        Canvas.Line((x, width) => Color.Green, (x, width) => {
-            var amp =
-                Math.Cos(220 * 2d * Math.PI * x * (1d / 44100));
-            return amp;
-        });
+        Complex.FastFourierTransform(fft, +1);
+
+        // for (int b = 0; b < samples / 2; b++) {
+        //     fft[b].Re = 0;
+        //     fft[b].Im = 0;
+        //     int neg = samples - b - 1;
+        //     if (neg < samples) {
+        //         fft[neg].Re = 0;
+        //         fft[neg].Im = 0;
+        //     }
+        // }
+
+        var z = Midi.FromFastFourierTransform(fft, 44100);
+
+        Complex.FastFourierTransform(fft, -1);
 
         Canvas.Line((x, width) => Color.Red, (x, width) => {
-            var amp =
-                Math.Cos(880 * 2d * Math.PI * x * (1d / 44100));
-            return amp;
+            int i = linear(x, width, fft.Length);
+            return fft[i].Re;
         });
 
-        Canvas.Line((x, width) => Color.White, (x, width) => {
-            var amp =
-                Math.Cos(440 * 2d * Math.PI * x * (1d / 44100));
-
-            amp +=
-                Math.Cos(220 * 2d * Math.PI * x * (1d / 44100));
-
-            amp =
-                +Math.Cos(880 * 2d * Math.PI * x * (1d / 44100));
-
-            amp /= 3.0;
-
-            return amp;
-        });
-
-        Canvas.Line((x, width) => Color.Gray, (x, width) => {
-            return 0;
-        });
-
-        Canvas.Line((x, width) => Color.Gray, (x, width) => {
-            return 1;
-        });
-
-        Canvas.Line((x, width) => Color.Gray, (x, width) => {
-            return -1;
-        });
-
-        Canvas.Line((x, width) => Color.Gray, (x, width) => {
-            if (wav != null && x < wav.Length) {
-                return wav[x].Left * 100;
-            }
-
-            return null;
-        });
+        // Canvas.Line((x, width) => Color.Orange, (x, width) => {
+        //     var amp =
+        //         Math.Cos(440 * 2d * Math.PI * x * (1d / 44100) + phase);
+        //     return amp;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.Green, (x, width) => {
+        //     var amp =
+        //         Math.Cos(220 * 2d * Math.PI * x * (1d / 44100));
+        //     return amp;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.Red, (x, width) => {
+        //     var amp =
+        //         Math.Cos(880 * 2d * Math.PI * x * (1d / 44100));
+        //     return amp;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.White, (x, width) => {
+        //     var amp =
+        //         Math.Cos(440 * 2d * Math.PI * x * (1d / 44100));
+        // 
+        //     amp +=
+        //         Math.Cos(220 * 2d * Math.PI * x * (1d / 44100));
+        // 
+        //     amp =
+        //         +Math.Cos(880 * 2d * Math.PI * x * (1d / 44100));
+        // 
+        //     amp /= 3.0;
+        // 
+        //     return amp;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
+        //     return 0;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
+        //     return 1;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
+        //     return -1;
+        // });
+        // 
+        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
+        //     if (wav != null && x < wav.Length) {
+        //         return wav[x].Left * 100;
+        //     }
+        // 
+        //     return null;
+        // });
 
         // Canvas.Plot((x, Xaxis) => {
         // 

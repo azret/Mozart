@@ -59,7 +59,7 @@
     <Compile Include="include\Audio\Synthesize.cs" />
     <Compile Include="include\Audio\Stereo.cs" />
     <Compile Include="include\Audio\Wav.cs" />
-    <Compile Include="include\Audio\Convert.cs" />
+    <Compile Include="include\Audio\Midi.cs" />
     <Compile Include="include\Math\Complex.cs" />
     <Compile Include="include\Math\IFunc.cs" />
     <Compile Include="include\Math\Random.cs" />

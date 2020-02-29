@@ -359,10 +359,12 @@
                 }
                 void DOT(int x, int y, byte R = 0, byte G = 0, byte B = 0) {
                     SetPixel(x, y, R, G, B);
-                    // SetPixel(x, y - 1, R, G, B);
-                    // SetPixel(x, y + 1, R, G, B);
-                    // SetPixel(x - 1, y, R, G, B);
-                    // SetPixel(x + 1, y, R, G, B);
+                    if (!bBars) {
+                        SetPixel(x, y - 1, R, G, B);
+                        SetPixel(x, y + 1, R, G, B);
+                        SetPixel(x - 1, y, R, G, B);
+                        SetPixel(x + 1, y, R, G, B);
+                    }
                     if (bBars && y < M) {
                         while (y < M) {
                             SetPixel(x, y, R, G, B);
