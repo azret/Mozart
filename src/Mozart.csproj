@@ -49,13 +49,13 @@
   <ItemGroup>
     <Compile Include="Cli.cs" />
     <Compile Include="App.cs" />
+    <Compile Include="include\Math\Frequency.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
     <Compile Include="include\Microsoft.Win32\Win32.cs" />
     <Compile Include="include\Audio\Chord.cs" />
     <Compile Include="include\Audio\Parse.cs" />
-    <Compile Include="include\Math\Frequency.cs" />
     <Compile Include="include\Audio\Synthesize.cs" />
     <Compile Include="include\Audio\Stereo.cs" />
     <Compile Include="include\Audio\Wav.cs" />

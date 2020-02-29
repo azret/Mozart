@@ -12,18 +12,18 @@ namespace System.Audio {
     [DebuggerDisplay("{Seconds}s")]
     public struct Chord : IEnumerable<Frequency> {
         public float Seconds;
-        public Frequency[] Frequency;
+        public Frequency[] Gains;
         public IEnumerator<Frequency> GetEnumerator() {
-            if (Frequency != null) {
+            if (Gains != null) {
             }
-            foreach (Frequency f in Frequency) {
+            foreach (Frequency f in Gains) {
                 if (f.Freq > 0) {
                     yield return f;
                 }
             }
         }
         IEnumerator IEnumerable.GetEnumerator() {
-            return Frequency.GetEnumerator();
+            return Gains.GetEnumerator();
         }
     }
 }

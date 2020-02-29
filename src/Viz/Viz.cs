@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Audio;
 using System.Drawing;
-using System.Threading;
-using Microsoft.Win32;
 using Microsoft.Win32.Plot2D;
 
 partial class App {
@@ -66,7 +64,7 @@ partial class App {
         //     }
         // }
 
-        var z = Midi.FromFastFourierTransform(fft, 44100);
+        // var z = Midi.FromFastFourierTransform(fft, 44100);
 
         Complex.FastFourierTransform(fft, -1);
 

@@ -23,7 +23,7 @@ namespace System.Audio {
                 if (i == 0) {
                     ParseHeader(sz, out fmt);
                 } else {
-                    var it = new Chord() { Frequency = new Frequency[Midi.Tones.Length] };
+                    var it = new Chord() { Gains = new Frequency[Midi.Tones.Length] };
                     ParseVector(
                         ref it,
                         out int[] cc,
@@ -31,7 +31,7 @@ namespace System.Audio {
                         sz);
                     for (int s = 0; s < cc.Length; s++) {
                         if (cc[s] > 0) {
-                            it.Frequency[s].Vol /= cc[s];
+                            it.Gains[s].Vol /= cc[s];
                         }
                     }
                     Model[i - 1] = it;
@@ -104,7 +104,7 @@ namespace System.Audio {
                 }
                 aIt.Seconds
                     = float.Parse(d);
-                aCc = new int[aIt.Frequency.Length];
+                aCc = new int[aIt.Gains.Length];
                 for (; ; ) {
                     while (i < aSz.Length && (aSz[i] == '\t' || aSz[i] == ' ' || aSz[i] == '•' || aSz[i] == '|' || aSz[i] == '⁞' ||
                         aSz[i] == '░' || aSz[i] == '║')) {
@@ -142,12 +142,12 @@ namespace System.Audio {
                         }
                         var f = Midi.ToneToFreq(Freq);
                         int p = Midi.FreqToKey(f);
-                        if (p >= 0 && p < aIt.Frequency.Length) {
+                        if (p >= 0 && p < aIt.Gains.Length) {
                             if (string.IsNullOrWhiteSpace(dB)) {
                                 dB = "0";
                             }
-                            aIt.Frequency[p].Freq = (float)f;
-                            aIt.Frequency[p].Vol = (float)Frequency.Amplitude((int)(dir * double.Parse(dB)));
+                            aIt.Gains[p].Freq = (float)f;
+                            aIt.Gains[p].Vol = (float)Frequency.Amplitude((int)(dir * double.Parse(dB)));
                             aCc[p]++;
                         }
                     } else /* End of Line */ {

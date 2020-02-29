@@ -22,5 +22,28 @@
                 return $"0Hz";
             }
         }
+        // public static Gain[] FromFastFourierTransform(Complex[] fft, int hz) {
+        //     int samples = fft.Length;
+        //     var F = new Gain[Tones.Length];
+        //     var cc = new int[F.Length];
+        //     double h = hz
+        //         / (double)samples;
+        //     for (int s = 0; s < samples / 2; s++) {
+        //         var f =
+        //                 h * 0.5 + (s * h);
+        //         var k = FreqToKey(f);
+        //         if (k >= 0 && k < F.Length) {
+        //             F[k].Freq = (float)KeyToFreq(k);
+        //             F[k].Vol +=
+        //                 2 * fft[s].Magnitude;
+        //         }
+        //     }
+        //     for (int k = 0; k < cc.Length; k++) {
+        //         if (cc[k] > 0) {
+        //             F[k].Vol /= cc[k];
+        //         }
+        //     }
+        //     return F;
+        // }
     }
 }

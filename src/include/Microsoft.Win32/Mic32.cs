@@ -199,53 +199,5 @@
                 this.Close();
             }
         }
-
-        #region Events
-
-        private IntPtr[] _handles;
-
-        public void AddHandle(IntPtr hWnd) {
-            lock (_lock) {
-                if (_handles == null) {
-                    _handles = new IntPtr[0];
-                }
-                Array.Resize(ref _handles,
-                    _handles.Length + 1);
-                _handles[_handles.Length - 1] = hWnd;
-            }
-        }
-
-        public void ClearHandles() {
-            lock (_lock) {
-                _handles = null;
-            }
-        }
-
-        public void RemoveHandle(IntPtr hWnd) {
-            lock (_lock) {
-                if (_handles != null) {
-                    for (int i = 0; i < _handles.Length; i++) {
-                        if (_handles[i] == hWnd) {
-                            _handles[i] = IntPtr.Zero;
-                        }
-                    }
-                }
-            }
-        }
-
-        public unsafe void Notify(Microsoft.WinMM.Mic32 hMic, IntPtr hWaveHeader) {
-            lock (_lock) {
-                if (_handles == null) {
-                    return;
-                }
-                foreach (IntPtr hWnd in _handles) {
-                    if (hWnd != IntPtr.Zero) {
-                        User32.PostMessage(hWnd, WM.WINMM, hMic.Handle,
-                            hWaveHeader);
-                    }
-                }
-            }
-        }
-        #endregion
     }
 }

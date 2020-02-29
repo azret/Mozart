@@ -99,6 +99,7 @@ unsafe partial class App {
         Color bgColor, Plot2D<T>.KeyDown onKeyDown = null)
         where T : class {
         Thread t = new Thread((getFrame) => {
+            IntPtr handl = IntPtr.Zero;
             Plot2D<T> hWnd = null;
             try {
                 hWnd = new Plot2D<T>($"{title}",
@@ -106,7 +107,7 @@ unsafe partial class App {
                     TimeSpan.FromMilliseconds(100),
                     onGetFrame, bgColor);
                 hWnd.Show();
-                Mic?.AddHandle(hWnd.hWnd);
+                AddHandle(handl = hWnd.hWnd);
                 while (User32.GetMessage(out MSG msg, hWnd.hWnd, 0, 0) != 0) {
                     User32.TranslateMessage(ref msg);
                     User32.DispatchMessage(ref msg);
@@ -114,7 +115,7 @@ unsafe partial class App {
             } catch (Exception e) {
                 Console.Error?.WriteLine(e);
             } finally {
-                Mic?.RemoveHandle(hWnd.hWnd);
+                RemoveHandle(handl);
                 hWnd?.Dispose();
                 WinMM.PlaySound(null,
                         IntPtr.Zero,
@@ -140,4 +141,56 @@ unsafe partial class App {
         Mic?.Toggle();
         return 0;
     }
+
+
+    #region Events
+
+    object _lock = new object();
+
+    private IntPtr[] _handles;
+
+    public void AddHandle(IntPtr hWnd) {
+        lock (_lock) {
+            if (_handles == null) {
+                _handles = new IntPtr[0];
+            }
+            Array.Resize(ref _handles,
+                _handles.Length + 1);
+            _handles[_handles.Length - 1] = hWnd;
+        }
+    }
+
+    public void ClearHandles() {
+        lock (_lock) {
+            _handles = null;
+        }
+    }
+
+    public void RemoveHandle(IntPtr hWnd) {
+        lock (_lock) {
+            if (_handles != null) {
+                for (int i = 0; i < _handles.Length; i++) {
+                    if (_handles[i] == hWnd) {
+                        _handles[i] = IntPtr.Zero;
+                    }
+                }
+            }
+        }
+    }
+
+    public unsafe void Notify(Microsoft.WinMM.Mic32 hMic, IntPtr hWaveHeader) {
+        lock (_lock) {
+            if (_handles == null) {
+                return;
+            }
+            foreach (IntPtr hWnd in _handles) {
+                if (hWnd != IntPtr.Zero) {
+                    User32.PostMessage(hWnd, WM.WINMM, hMic.Handle,
+                        hWaveHeader);
+                }
+            }
+        }
+    }
+
+    #endregion
 }

@@ -1,6 +1,7 @@
 using System;
 using System.Audio;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Microsoft.Win32;
 using Microsoft.WinMM;
 
@@ -10,15 +11,16 @@ unsafe partial class App {
         set => Environment.CurrentDirectory = value;
     }
 
-    public readonly Mic32 Mic;
+    public Mic32 Mic;
 
     public App() {
-        Mic = OpenMic();
+        Interlocked.Exchange(ref Mic,
+            OpenMic())?.Dispose();
     }
 
-    static Mic32 OpenMic() {
+    Mic32 OpenMic() {
         int samples = 1024;
-        var mic = new Microsoft.WinMM.Mic32(samples, Wav._hz, (hMic, hWaveHeader) => {
+        var hMic32 = new Microsoft.WinMM.Mic32(samples, Wav._hz, (hMic, hWaveHeader) => {
             WaveHeader* pwh = (WaveHeader*)hWaveHeader;
             if (pwh != null) {
                 short* psData =
@@ -30,17 +32,17 @@ unsafe partial class App {
                 WinMM.Throw(
                     WinMM.waveInAddBuffer(hMic.Handle, hWaveHeader, Marshal.SizeOf(typeof(WaveHeader))),
                     WinMM.ErrorSource.WaveIn);
-                hMic.Notify(hMic, hWaveHeader);
+                Notify(hMic, hWaveHeader);
             }
         });
         try {
-            mic.Open();
+            hMic32.Open();
         } catch (Exception e) {
             Console.Error?.WriteLine(e);
-            mic.Dispose();
-            mic = null;
+            hMic32.Dispose();
+            return null;
         }
-        return mic;
+        return hMic32;
     }
 
     static void Main() {
