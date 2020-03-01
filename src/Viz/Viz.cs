@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Audio;
+using System.Diagnostics;
 using System.Drawing;
 using Microsoft.Win32.Plot2D;
 
@@ -18,197 +19,76 @@ partial class App {
 
         var elise = Wav.Read(@"D:\data\Elise.wav");
 
-        app.StartWin32Window<Stereo[]>(
-            onDrawFrame, () => elise, title,
+        app.StartWinUI<App>(
+            onDrawFrame, () => app, title,
             Color.Black);
 
         return false;
     }
 
-    static void onDrawFrame(Surface2D Canvas, float phase, Stereo[] wav) {
+    static void onDrawFrame(Surface2D Canvas, float phase, App app) {
+        Complex[] sdft = app.Spectro.Peek();
+
+        int samples = sdft != null ?
+            sdft.Length
+            : 0;
+
+        int hz = app.Spectro.Hz;
+
+        var duration =
+            Math.Round((double)samples / hz, 4);
+
+        Canvas.TopLeft = $"{samples} @ {hz}Hz = {duration}s";
+        Canvas.TopRight = $"{phase:N4}s";
+
         Canvas.Fill(Color.Black);
 
-        int samples = 1024;
-
-        Complex[] fft = new Complex[samples];
-
-        for (int s = 0; s < samples; s++) {
-            var ampl =
-                0.7 * Math.Cos(220 * 2d * Math.PI * s * (1d / 44100) + phase);
-            ampl +=
-                .2 * Math.Cos(440 * 2d * Math.PI * s * (1d / 44100) + phase);
-            ampl +=
-                0.3 * Math.Cos(880 * 2d * Math.PI * s * (1d / 44100) + phase);
-            ampl /= 3;
-            fft[s].Re = (float)ampl;
-        }
+        if (sdft == null) return;
 
         int linear(float val, float from, float to) {
             return (int)(val * to / from);
         }
 
-        Canvas.Line((x, width) => Color.Orange, (x, width) => {
-            int i = linear(x, width, fft.Length);
-            return fft[i].Re;
+        var X = Complex.InverseFFT(sdft);
+
+        Canvas.Line((x, width) => Color.Green, (x, width) => {
+            int i = linear(x, width, X.Length);
+            return SigF.f(X[i]);
         });
 
-        Complex.FastFourierTransform(fft, +1);
+        Canvas.Line((x, width) => Color.DarkOrange, (x, width) => {
+            int i = linear(x, width, sdft.Length);
+            return +(SigF.f(sdft[i].Magnitude) - 0.5);
+        }, true);
 
-        // for (int b = 0; b < samples / 2; b++) {
-        //     fft[b].Re = 0;
-        //     fft[b].Im = 0;
-        //     int neg = samples - b - 1;
-        //     if (neg < samples) {
-        //         fft[neg].Re = 0;
-        //         fft[neg].Im = 0;
-        //     }
-        // }
+        for (int s = 0; s < samples; s++) {
+            sdft[s].Scale(1f);
+        }
 
-        // var z = Midi.FromFastFourierTransform(fft, 44100);
+        double h = hz
+            / (double)samples;
 
-        Complex.FastFourierTransform(fft, -1);
-
-        Canvas.Line((x, width) => Color.Red, (x, width) => {
-            int i = linear(x, width, fft.Length);
-            return fft[i].Re;
-        });
-
-        // Canvas.Line((x, width) => Color.Orange, (x, width) => {
-        //     var amp =
-        //         Math.Cos(440 * 2d * Math.PI * x * (1d / 44100) + phase);
-        //     return amp;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.Green, (x, width) => {
-        //     var amp =
-        //         Math.Cos(220 * 2d * Math.PI * x * (1d / 44100));
-        //     return amp;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.Red, (x, width) => {
-        //     var amp =
-        //         Math.Cos(880 * 2d * Math.PI * x * (1d / 44100));
-        //     return amp;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.White, (x, width) => {
-        //     var amp =
-        //         Math.Cos(440 * 2d * Math.PI * x * (1d / 44100));
-        // 
-        //     amp +=
-        //         Math.Cos(220 * 2d * Math.PI * x * (1d / 44100));
-        // 
-        //     amp =
-        //         +Math.Cos(880 * 2d * Math.PI * x * (1d / 44100));
-        // 
-        //     amp /= 3.0;
-        // 
-        //     return amp;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
-        //     return 0;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
-        //     return 1;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
-        //     return -1;
-        // });
-        // 
-        // Canvas.Line((x, width) => Color.Gray, (x, width) => {
-        //     if (wav != null && x < wav.Length) {
-        //         return wav[x].Left * 100;
-        //     }
-        // 
-        //     return null;
-        // });
-
-        // Canvas.Plot((x, Xaxis) => {
-        // 
-        //     Pixel2D?[] lines = new Pixel2D?[1];
-        // 
-        //     lines[0] = new Pixel2D(x.Left,
-        //           Surface2D.ChangeColorBrightness(Color.Red,
-        //                   (float)(0)));
-        // 
-        //     return lines;
-        // 
-        // }, wav, Math.Min(wav.Length, Canvas.Width));
-
-        /*
-
-        double FREQmax = double.MinValue,
-            FREQmin = double.MaxValue;
-
-        Canvas.Plot((x, Xaxis) => {
-            if (x == null) return null;
-            Pixel2D?[] Yaxis = new Pixel2D?[x.Axis.Length + 1];
-            for (int j = 0; j < x.Axis.Length; j++) {
-                int k = x.Axis.Length - j - 1;
-                double vol = x.Axis[k].Re * Math.E;
-                if (vol > 0) {
-                    FREQmax = Math.Max(FREQmax, x.Axis[k].Im);
-                    FREQmin = Math.Min(FREQmin, x.Axis[k].Im);
-                }
-                if (vol > Math.E) {
-                    Color color = Color.White;
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                } else if (vol >= 1) {
-                    Color color = Color.Red;
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                } else if (vol >= 0.7) {
-                    Color color = Color.Yellow;
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                } else if (vol > 0.5) {
-                    Color color = Color.Yellow;
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                } else if (vol > 0.3) {
-                    Color color = Color.YellowGreen;
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                } else if (vol > 0.1) {
-                    Color color = Color.Green;
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                } else if (vol > 0) {
-                    Color color = Color.FromArgb(15, 58, 94);
-                    Yaxis[k] = new Pixel2D(
-                          (j / (double)x.Axis.Length),
-                          Surface2D.ChangeColorBrightness(color,
-                                  (float)(0)));
-                }
+        for (int s = 0; s < samples / 2; s++) {
+            var f =
+                    h * 0.5 + (s * h);
+            var n = samples - s;
+            if ((s == 3 || s == 11) && n > s && n >= 0
+                        && n < samples) {
+                sdft[s].Scale(0f);
+                sdft[n].Scale(0f);
             }
+        }
 
-            Yaxis[x.Axis.Length] = new Pixel2D(
-                          1 - x.Score.Im,
-                          Surface2D.ChangeColorBrightness(Color.Violet,
-                                  (float)(0)));
+        X = Complex.InverseFFT(sdft);
 
-            return Yaxis;
+        Canvas.Line((x, width) => Color.Gray, (x, width) => {
+            int i = linear(x, width, sdft.Length);
+            return -(SigF.f(sdft[i].Magnitude) - 0.5);
+        }, true);
 
-        }, Model.GetBuffer(), cc);
-
-        Canvas.TopLeft = FREQmax.ToString() + "Hz";
-        Canvas.BottomLeft = FREQmin.ToString() + "Hz";
-        */
+        Canvas.Line((x, width) => Color.DarkRed, (x, width) => {
+            int i = linear(x, width, X.Length);
+            return SigF.f(X[i]);
+        });
     }
 }

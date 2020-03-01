@@ -95,7 +95,7 @@ unsafe partial class App {
         return false;
     }
 
-    Thread StartWin32Window<T>(Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
+    Thread StartWinUI<T>(Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
         Color bgColor, Plot2D<T>.KeyDown onKeyDown = null)
         where T : class {
         Thread t = new Thread((getFrame) => {
@@ -142,7 +142,6 @@ unsafe partial class App {
         return 0;
     }
 
-
     #region Events
 
     object _lock = new object();
@@ -185,7 +184,10 @@ unsafe partial class App {
             }
             foreach (IntPtr hWnd in _handles) {
                 if (hWnd != IntPtr.Zero) {
-                    User32.PostMessage(hWnd, WM.WINMM, hMic.Handle,
+                    User32.PostMessage(hWnd, WM.WINMM,
+                        hMic != null
+                            ? hMic.Handle
+                            : IntPtr.Zero,
                         hWaveHeader);
                 }
             }

@@ -1,4 +1,4 @@
-﻿namespace System {
+﻿namespace System.Audio {
     public struct Frequency {
         public static int dB(double amplitude) {
             return (int)(20.0 * System.Math.Log10(amplitude));

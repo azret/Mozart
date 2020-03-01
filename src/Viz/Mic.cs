@@ -21,7 +21,7 @@ partial class App {
             throw new ArgumentException();
         }
         app.Mic?.UnMute();
-        app.StartWin32Window<Mic32>(
+        app.StartWinUI<Mic32>(
             onDrawMicWave, () => app.Mic, "Signal (Mic)",
             Color.Black,
             app.onKeyDown);
@@ -40,7 +40,7 @@ partial class App {
             throw new ArgumentException();
         }
         app.Mic?.UnMute();
-        app.StartWin32Window<Mic32>(
+        app.StartWinUI<Mic32>(
             onDrawMicFastFourierTransform, () => app.Mic, "Fast Fourier Transform (Mic)",
             Color.Black,
             app.onKeyDown);
@@ -59,7 +59,7 @@ partial class App {
             throw new ArgumentException();
         }
         app.Mic?.UnMute();
-        app.StartWin32Window<Mic32>(
+        app.StartWinUI<Mic32>(
             onDrawMicFastFourierTransform, () => app.Mic, "MIDI (Mic)",
             Color.Black,
             app.onKeyDown);

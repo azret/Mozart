@@ -47,9 +47,11 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Loop.cs" />
     <Compile Include="Cli.cs" />
     <Compile Include="App.cs" />
-    <Compile Include="include\Math\Frequency.cs" />
+    <Compile Include="include\Audio\Frequency.cs" />
+    <Compile Include="Process\Spectro.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />

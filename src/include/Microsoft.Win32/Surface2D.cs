@@ -82,7 +82,7 @@
                 int cbBuff = hData.Stride
                     * hData.Height;
                 int i = 0;
-                for (byte* p = pBuff; p < pBuff + cbBuff;) {
+                for (byte* p = pBuff; p < pBuff + cbBuff - 1;) {
                     byte R = bgColor.R, G = bgColor.G, B = bgColor.B;
                     var offst = (int)(((ulong)p - (ulong)pBuff) / 3);
                     int x = (offst % hData.Width);

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace System {
@@ -6,6 +7,10 @@ namespace System {
     public partial struct Complex {
         public float Re,
             Im;
+        public Complex(float re, float im) {
+            Re = re;
+            Im = im;
+        }
         public override string ToString() {
             if (Im > 0) {
                 return string.Format("{0}+i{1}", Re, Im);
@@ -18,6 +23,26 @@ namespace System {
         public float Magnitude {
             get {
                 return (float)Math.Sqrt((Re * Re) + (Im * Im));
+            }
+        }
+        public float Phase {
+            get {
+                return (float)Math.Atan2(Im, Re);
+            }
+        }
+        public void Scale(float factor) {
+            if (factor < -1 ||  factor > 1) {
+                throw new ArgumentOutOfRangeException();
+            }
+            double vol = Magnitude,
+                pH = Phase;
+            double re = (Math.Cos(pH) * vol * factor),
+                        im = (Math.Sin(pH) * vol * factor);
+            if (Re != re) {
+                Re = (float)re;
+            }
+            if (Im != im) {
+                Im = (float)im;
             }
         }
     }
@@ -47,6 +72,55 @@ namespace System {
         }
     }
     public partial struct Complex {
+        public static Complex[] FFT(float[] x) {
+            int k;
+            Complex[] fft = new Complex[x.Length];
+            for (k = 0; k < x.Length; k++) {
+                fft[k].Re = x[k];
+            }
+            FastFourierTransform(fft, +1);
+            return fft;
+        }
+        public static float[] InverseFFT(Complex[] fft) {
+            int k;
+            fft = (Complex[])fft.Clone();
+            float[] X = new float[fft.Length];
+            FastFourierTransform(fft, -1);
+            for (k = 0; k < fft.Length; k++) {
+                X[k] = fft[k].Re;
+            }
+            return X;
+        }
+        public static Complex[] DFT(float[] x) {
+            double pH = 2.0 * Math.PI / x.Length;
+            int k, n;
+            Complex[] dft = new Complex[x.Length];
+            for (k = 0; k < x.Length; k++) {
+                dft[k] = new Complex(0.0f, 0.0f);
+                for (n = 0; n < x.Length; n++) {
+                    dft[k].Re += x[n] * (float)Math.Cos(pH * k * n);
+                    dft[k].Im -= x[n] * (float)Math.Sin(pH * k * n);
+                }
+                dft[k].Re /= x.Length;
+                dft[k].Im /= x.Length;
+            }
+            return dft;
+        }
+        public static double[] InverseDFT(Complex[] dft) {
+            double[] X = new double[dft.Length];
+            double im,
+                pH = 2.0 * Math.PI / dft.Length;
+            for (int n = 0; n < dft.Length; n++) {
+                im = X[n] = 0.0;
+                for (int k = 0; k < dft.Length; k++) {
+                    X[n] += dft[k].Re * Math.Cos(pH * k * n)
+                          - dft[k].Im * Math.Sin(pH * k * n);
+                    im += dft[k].Re * Math.Sin(pH * k * n)
+                          + dft[k].Im * Math.Cos(pH * k * n);
+                }
+            }
+            return X;
+        }
         public static void FastFourierTransform(Complex[] fft, short dir) {
             int n = fft.Length,
                     m = (int)Math.Log(n, 2);

@@ -11,11 +11,19 @@ unsafe partial class App {
         set => Environment.CurrentDirectory = value;
     }
 
+    readonly Spectro Spectro = new Spectro();
+
+    Timer _hTimer;
+
     public Mic32 Mic;
 
     public App() {
-        Interlocked.Exchange(ref Mic,
-            OpenMic())?.Dispose();
+        _hTimer = new Timer((state) => {
+            Loop();
+        }, null, 0, 100);
+
+        // Interlocked.Exchange(ref Mic,
+        //     OpenMic())?.Dispose();
     }
 
     Mic32 OpenMic() {

@@ -20,34 +20,38 @@ namespace System.Audio {
 
         public static void Dump(IEnumerable<Complex[]> fft, int hz) {
             foreach (Complex[] i in fft) {
-                var samples = i.Length;
-                double duration
-                    = Math.Round(samples / (double)hz, 4);
-                double h = hz
-                    / (double)samples;
-                int cc = 0;
-                for (int s = 0; s < samples / 2; s++) {
-                    var f =
-                            h * 0.5 + (s * h);
-                    double vol = i[s].Magnitude;
-                    var dB = Frequency.dB(vol);
-                    if ((dB != int.MinValue)) {
-                        if (cc == 0) {
-                            Console.Write($"░ {duration}s ║");
-                        }
-                        if (dB < 0) {
-                            Console.Write($" {f:n2}Hz{dB}dB");
-                        } else if (dB > 0) {
-                            Console.Write($" {f:n2}Hz+{dB}dB");
-                        } else {
-                            Console.Write($" {f:n2}Hz±0dB");
-                        }
-                        cc++;
+                Dump(i, hz);
+            }
+        }
+
+        public static void Dump(Complex[] i, int hz) {
+            var samples = i.Length;
+            double duration
+                = Math.Round(samples / (double)hz, 4);
+            double h = hz
+                / (double)samples;
+            int cc = 0;
+            for (int s = 0; s < samples / 2; s++) {
+                var f =
+                        h * 0.5 + (s * h);
+                double vol = i[s].Magnitude;
+                var dB = Frequency.dB(vol);
+                if ((dB != int.MinValue) && dB > -20) {
+                    if (cc == 0) {
+                        Console.Write($"║ {duration}s ║");
                     }
+                    if (dB < 0) {
+                        Console.Write($" ║ {f:n2}Hz{dB}dB");
+                    } else if (dB > 0) {
+                        Console.Write($" ║ {f:n2}Hz+{dB}dB");
+                    } else {
+                        Console.Write($" ║ {f:n2}Hz±0dB");
+                    }
+                    cc++;
                 }
-                if (cc > 0) {
-                    Console.WriteLine();
-                }
+            }
+            if (cc > 0) {
+                Console.WriteLine();
             }
         }
     }
