@@ -85,8 +85,8 @@ namespace System.Audio {
                     throw new InvalidDataException("Invalid format.");
                 }
                 int i = 0, wordStart = i;
-                while (i < aSz.Length && (aSz[i] != '\t' && aSz[i] != ' '
-                                && aSz[i] != '•' && aSz[i] != '|' && aSz[i] != '⁞')) {
+                while (i < aSz.Length && (aSz[i] == '\t' || aSz[i] == ' ' || aSz[i] == '-' || aSz[i] == '+' || aSz[i] == '±'
+                                || aSz[i] == '•' || aSz[i] == '|' || aSz[i] == '⁞' || aSz[i] == '░' || aSz[i] == '║')) {
                     i++;
                 }
                 string w = aSz.Substring(wordStart, i - wordStart);
@@ -101,6 +101,9 @@ namespace System.Audio {
                 string d = aSz.Substring(wordStart, i - wordStart);
                 if (i < aSz.Length && (aSz[i] == 's')) {
                     i++;
+                }
+                if (string.IsNullOrWhiteSpace(d)) {
+
                 }
                 aIt.Seconds
                     = float.Parse(d);
@@ -147,7 +150,7 @@ namespace System.Audio {
                                 dB = "0";
                             }
                             aIt.Gains[p].Freq = (float)f;
-                            aIt.Gains[p].Vol = (float)Frequency.Amplitude((int)(dir * double.Parse(dB)));
+                            aIt.Gains[p].Vol = (float)System.Audio.dB.ToAmplitude((int)(dir * double.Parse(dB)));
                             aCc[p]++;
                         }
                     } else /* End of Line */ {

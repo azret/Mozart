@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace System {
@@ -83,11 +82,14 @@ namespace System {
         }
         public static float[] InverseFFT(Complex[] fft) {
             int k;
-            fft = (Complex[])fft.Clone();
-            float[] X = new float[fft.Length];
-            FastFourierTransform(fft, -1);
+            Complex[] f2 = new Complex[fft.Length];
             for (k = 0; k < fft.Length; k++) {
-                X[k] = fft[k].Re;
+                f2[k] = fft[k];
+            }
+            float[] X = new float[f2.Length];
+            FastFourierTransform(f2, -1);
+            for (k = 0; k < f2.Length; k++) {
+                X[k] = f2[k].Re;
             }
             return X;
         }

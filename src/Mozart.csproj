@@ -47,21 +47,24 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Loop.cs" />
-    <Compile Include="Cli.cs" />
+    <Compile Include="App\WinUI.cs" />
+    <Compile Include="App\Mic.cs" />
+    <Compile Include="App\Loop.cs" />
+    <Compile Include="App\Cli.cs" />
     <Compile Include="App.cs" />
-    <Compile Include="include\Audio\Frequency.cs" />
-    <Compile Include="Process\Spectro.cs" />
+    <Compile Include="Audio\dB.cs" />
+    <Compile Include="Audio\Frequency.cs" />
+    <Compile Include="App\Ranges.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
     <Compile Include="include\Microsoft.Win32\Win32.cs" />
-    <Compile Include="include\Audio\Chord.cs" />
-    <Compile Include="include\Audio\Parse.cs" />
-    <Compile Include="include\Audio\Synthesize.cs" />
-    <Compile Include="include\Audio\Stereo.cs" />
-    <Compile Include="include\Audio\Wav.cs" />
-    <Compile Include="include\Audio\Midi.cs" />
+    <Compile Include="Audio\Chord.cs" />
+    <Compile Include="Audio\Parse.cs" />
+    <Compile Include="Audio\Synthesize.cs" />
+    <Compile Include="Audio\Stereo.cs" />
+    <Compile Include="Audio\Wav.cs" />
+    <Compile Include="Audio\Midi.cs" />
     <Compile Include="include\Math\Complex.cs" />
     <Compile Include="include\Math\IFunc.cs" />
     <Compile Include="include\Math\Random.cs" />
@@ -70,8 +73,9 @@
     <Compile Include="include\Math\Sigmoid.cs" />
     <Compile Include="include\Math\SigQ.cs" />
     <Compile Include="include\Math\Tanh.cs" />
-    <Compile Include="Process\Print.cs" />
-    <Compile Include="Viz\Mic.cs" />
+    <Compile Include="App\Print.cs" />
+    <Compile Include="App\Stream.cs" />
+    <Compile Include="Play\Play.cs" />
     <Compile Include="Viz\Viz.cs" />
   </ItemGroup>
   <ItemGroup>

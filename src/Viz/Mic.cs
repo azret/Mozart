@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Audio;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using Microsoft.Win32.Plot2D;
 using Microsoft.WinMM;
 
@@ -111,6 +109,7 @@ partial class App {
             Microsoft.Win32.WinMM.PLAYSOUNDFLAGS.SND_FILENAME |
             Microsoft.Win32.WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
             Microsoft.Win32.WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
+            Microsoft.Win32.WinMM.PLAYSOUNDFLAGS.SND_LOOP |
             Microsoft.Win32.WinMM.PLAYSOUNDFLAGS.SND_PURGE);
 
         return false;
