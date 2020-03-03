@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Audio;
+using System.Diagnostics;
 using System.IO;
 
 partial class App {
@@ -12,11 +13,13 @@ partial class App {
             return false;
         }
 
-        var inFile = @"D:\data\play.md";
+        var inWav = File.Exists(cliScript)
+            ? Wav.Parse(cliScript)
+            : Wav.Parse(cliScript, "MIDI");
 
-        Chord[] inWav = Wav.Parse(inFile);
-
-        var wavOutFile = Path.GetFullPath(Path.ChangeExtension(inFile, ".g.wav"));
+        var wavOutFile = File.Exists(cliScript)
+            ? Path.GetFullPath(Path.ChangeExtension(cliScript, ".g.wav"))
+            : Path.GetFullPath(Path.ChangeExtension("cli.wav", ".g.wav"));
 
         Console.Write($"\r\nSynthesizing...\r\n\r\n");
 

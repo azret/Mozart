@@ -25,11 +25,13 @@ partial class App {
     static void onDrawWave(Surface2D Canvas, float phase, App app) {
         int hz = app?.Stream?.Hz ?? 0;
 
-        Complex[][] Model = app?.Stream?._buffer;
+        Complex[][] Model = null;
+
+        app?.Stream?.Peek(out Model);
 
         int cc = Model?.Length ?? 0;
 
-        cc = Math.Min(
+        cc = Math.Max(
             cc,
             Canvas.Width);
 
@@ -39,14 +41,14 @@ partial class App {
             FREQmin = double.MaxValue;
 
         Canvas.Plot((it, i) => {
+
             if (it == null) return null;
 
-            var z = Frequency.FromFastFourierTransform(it, hz);
+            Frequency[] z = Frequency.FromFourierTransform(it, hz);
 
             Pixel2D?[] Yaxis = new Pixel2D?[z.Length];
 
             for (int j = 0; j < z.Length; j++) {
-                int k = z.Length - j - 1;
                 double vol = z[j].Vol * Math.E;
                 if (vol > 0) {
                     FREQmax = Math.Max(FREQmax, z[j].Freq);
@@ -54,49 +56,49 @@ partial class App {
                 }
                 if (vol > Math.E) {
                     Color color = Color.White;
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol >= 1) {
                     Color color = Color.Red;
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol >= 0.75) {
                     Color color = Color.Yellow;
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol > 0.5) {
-                    Color color = Color.LightGreen;
-                    Yaxis[k] = new Pixel2D(
+                    Color color = Color.YellowGreen;
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol > 0.25) {
                     Color color = Color.Green;
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol > 0.1) {
                     Color color = Color.DarkGreen;
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol > 0.05) {
                     Color color = Color.FromArgb(30, 30, 30);
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));
                 } else if (vol > 0) {
                     Color color = Color.FromArgb(10, 10, 10);
-                    Yaxis[k] = new Pixel2D(
+                    Yaxis[j] = new Pixel2D(
                           (j / (double)z.Length),
                           Surface2D.ChangeColorBrightness(color,
                                   (float)(0)));

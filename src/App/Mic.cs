@@ -8,7 +8,7 @@ unsafe partial class App {
     public Mic32 Mic;
 
     Mic32 OpenMic() {
-        var hMic32 = new Microsoft.WinMM.Mic32(Stream.Samples, Wav._hz, (hMic, hWaveHeader) => {
+        var hMic32 = new Microsoft.WinMM.Mic32(1024, Stereo.Hz, (hMic, hWaveHeader) => {
             WaveHeader* pwh = (WaveHeader*)hWaveHeader;
             if (pwh != null) {
                 short* psData =

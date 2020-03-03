@@ -10,11 +10,11 @@ unsafe partial class App {
     }
 
     Timer _hTimer;
-
+    int step = 0;
     void Loop() {
         float phase = GetLocalTime();
 
-        int samples = 1024;
+        int samples = 2048;
             int hz = Stream.Hz;
 
         var duration =
@@ -22,8 +22,10 @@ unsafe partial class App {
 
         float[] X = new float[samples];
 
+        step++;
+
         for (int s = 0; s < samples; s++) {
-            var f = ((Random.Next() & 0xFFFF));
+            var f = Midi.KeyToFreq(step % Midi.Tones.Length);
             var ampl =
                 Math.Sin(f * 2d * Math.PI * s * (1d / hz) + phase);
             // ampl +=
@@ -43,6 +45,31 @@ unsafe partial class App {
         var fft = Complex.FFT(X);
 
         // Print.Dump(fft, Stream.Hz);
+
+        if (step >= Midi.Tones.Length) {
+            for (int s = 0; s < samples; s++) {
+                fft[s].Scale(1f);
+            }
+
+            double h = hz
+                / (double)samples;
+
+            for (int s = 0; s < samples / 2; s++) {
+                var f =
+                        h * 0.5 + (s * h);
+                var dB = System.Audio.dB.FromAmplitude(2 * fft[s].Magnitude);
+                bool filterOut =
+                    !Ranges.IsInRange(f, dB);
+                if (filterOut) {
+                    var n = samples - s;
+                    fft[s].Scale(0f);
+                    if (s > 0 && n > s && n >= 0
+                            && n < samples) {
+                        fft[n].Scale(0f);
+                    }
+                }
+            }
+        }
 
         Stream.Push(fft);
     }

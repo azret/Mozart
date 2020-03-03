@@ -19,7 +19,7 @@ public static class Ranges {
         }
         if (bInRange) {
             bInRange = false;
-            if (dB >= -60 && dB <= 60) {
+            if (dB >= -20 && dB <= 20) {
                 bInRange = true;
             }
         }

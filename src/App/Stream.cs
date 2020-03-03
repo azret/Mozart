@@ -8,7 +8,8 @@ public class Stream {
 
     Complex[] _peek;
 
-    public Complex[][] _buffer = new Complex[1024][];
+    int _cc;
+    Complex[][] _buffer = new Complex[1024][];
 
     public void Push(Complex[] fft) {
         lock (_lock) {
@@ -20,6 +21,22 @@ public class Stream {
                 _buffer[i] = _buffer[i + 1];
             }
             _buffer[_buffer.Length - 1] = last;
+            _cc++;
+        }
+    }
+
+    public int Peek(out Complex[][] buffer) {
+        lock (_lock) {
+            if (_cc < _buffer.Length) {
+                buffer = new Complex[_cc][];
+                for (int i = 0; i < _cc; i++) {
+                    buffer[buffer.Length - i - 1] = _buffer[_buffer.Length - i - 1];
+                }
+                return _cc;
+            } else {
+                buffer = (Complex[][])_buffer.Clone();
+                return buffer.Length;
+            }
         }
     }
 

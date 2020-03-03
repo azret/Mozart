@@ -138,8 +138,22 @@
             }
             return null;
         }
-        public static double ToneToFreq(string t) {
+        public static double Parse(string t) {
             var freq = 0.0;
+            switch (t) {
+                case "B": t = "B4"; break;
+                case "A#": t = "A#4"; break;
+                case "A": t = "A4"; break;
+                case "G#": t = "G#4"; break;
+                case "G": t = "G4"; break;
+                case "F#": t = "F#4"; break;
+                case "F": t = "F4"; break;
+                case "E": t = "E4"; break;
+                case "D#": t = "D#4"; break;
+                case "D": t = "D4"; break;
+                case "C#": t = "C#4"; break;
+                case "C": t = "C4"; break;
+            }
             switch (t) {
                 case "G9": freq = 12543.85; break;
                 case "F#9": freq = 11839.82; break;

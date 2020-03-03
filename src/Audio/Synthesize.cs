@@ -2,31 +2,31 @@
     using System;
     using System.Collections.Generic;
     public static partial class Wav {
-        public static IEnumerable<float[]> Synthesize(IEnumerable<Chord> Frequency) {
-            foreach (var it in Frequency) {
+        public static IEnumerable<float[]> Synthesize(IEnumerable<Set> music) {
+            foreach (var it in music) {
                 if (it.Seconds > 0) {
-                    yield return Synthesize(it);
+                    yield return Synthesize(it.Seconds, it);
                 }
             }
         }
-        public static float[] Synthesize(Chord chord) {
-            var samples = (int)Math.Ceiling(chord.Seconds * _hz);
+        public static float[] Synthesize(float seconds, IEnumerable<Frequency> F) {
+            var samples = (int)Math.Ceiling(seconds * Stereo.Hz);
             float[] signal = new float[samples];
             for (int k = 0; k < signal.Length; k++) {
                 double t
-                    = 2d * System.Math.PI * k * (1d / _hz);
+                    = 2d * System.Math.PI * k * (1d / Stereo.Hz);
                 signal[k]
-                    = Synthesize(chord.Gains, t);
+                    = Synthesize(F, t);
             }
             return signal;
         }
-        public static float Synthesize(Frequency[] gains, double pH) {
+        public static float Synthesize(IEnumerable<Frequency> F, double pH) {
             double vol = 0.0d,
                 cc = 0.0d;
-            for (int p = 0; p < gains.Length; p++) {
-                if (gains[p].Freq > 0) {
-                    vol += gains[p].Vol /* Vol */
-                             * System.Math.Cos(gains[p].Freq /* Freq */ * pH);
+            foreach (Frequency it in F) {
+                if (it.Freq > 0) {
+                    vol += it.Vol /* Vol */
+                             * System.Math.Cos(it.Freq /* Freq */ * pH);
                     cc++;
                 }
             }

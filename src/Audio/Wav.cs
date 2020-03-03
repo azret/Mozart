@@ -5,9 +5,6 @@ using System.Text;
 
 namespace System.Audio {
     public static partial class Wav {
-        public static readonly int _hz = 44100;
-    }
-    public static partial class Wav {
         public static Stereo[] Read(string fileName) {
             Stereo[] _aSamples = null;
             using (var file = System.IO.File.Open(fileName, FileMode.Open, FileAccess.Read)) {
@@ -84,8 +81,8 @@ namespace System.Audio {
                 file.WriteInt(16);
                 file.WriteShort((short)1);
                 file.WriteShort((short)_nChannels);
-                file.WriteInt(_hz);
-                file.WriteInt(_hz * _nChannels * _nBitsPerSample / 8);
+                file.WriteInt(Stereo.Hz);
+                file.WriteInt(Stereo.Hz * _nChannels * _nBitsPerSample / 8);
                 file.WriteShort((short)(_nChannels * _nBitsPerSample / 8));
                 file.WriteShort((short)_nBitsPerSample);
                 file.WriteString("data");

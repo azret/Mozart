@@ -55,11 +55,11 @@
     <Compile Include="Audio\dB.cs" />
     <Compile Include="Audio\Frequency.cs" />
     <Compile Include="App\Ranges.cs" />
+    <Compile Include="Audio\Set.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
     <Compile Include="include\Microsoft.Win32\Win32.cs" />
-    <Compile Include="Audio\Chord.cs" />
     <Compile Include="Audio\Parse.cs" />
     <Compile Include="Audio\Synthesize.cs" />
     <Compile Include="Audio\Stereo.cs" />
