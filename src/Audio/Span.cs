@@ -7,23 +7,23 @@ namespace System.Audio {
     public class Span : IEnumerable<Frequency> {
         public readonly float Seconds;
         readonly
-            IEnumerable<Frequency> _items;
-        public Span(float seconds, IEnumerable<Frequency> items) {
+            IEnumerable<Frequency> _keys;
+        public Span(float seconds, IEnumerable<Frequency> keys) {
             Seconds = seconds;
-            _items = items;
+            _keys = keys;
         }
         public IEnumerator<Frequency> GetEnumerator() {
-            if (_items == null) {
+            if (_keys == null) {
                 yield break;
             }
-            foreach (Frequency f in _items) {
+            foreach (Frequency f in _keys) {
                 if (f.Freq > 0) {
                     yield return f;
                 }
             }
         }
         IEnumerator IEnumerable.GetEnumerator() {
-            return _items.GetEnumerator();
+            return _keys.GetEnumerator();
         }
     }
 }

@@ -89,7 +89,7 @@ unsafe partial class App {
         } else if (cliString.StartsWith("cls", StringComparison.OrdinalIgnoreCase)) {
             Console.Clear();
         } else {
-            return PlayFrequency(
+            return ScoreWav(
                 app,
                 cliString,
                 IsTerminated);

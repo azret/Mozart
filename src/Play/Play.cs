@@ -2,6 +2,7 @@
 using System.Audio;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 partial class App {
     static bool PlayFrequency(App app,
@@ -13,7 +14,8 @@ partial class App {
             return false;
         }
 
-        var inWavFile = Path.Combine(app.CurrentDirectory, cliScript);
+        var inWavFile = Path.ChangeExtension(
+            Path.Combine(app.CurrentDirectory, cliScript), ".md");
 
         var inWav = File.Exists(inWavFile)
             ? Wav.Parse(inWavFile)
@@ -25,9 +27,22 @@ partial class App {
 
         Console.Write($"\r\nSynthesizing...\r\n\r\n");
 
-        var data = Wav.Synthesize(inWav);
+        var dataOut = Wav.Synthesize(inWav);
 
-        Wav.Write(wavOutFile, data);
+        Wav.Write(wavOutFile, dataOut);
+
+        var dataIn = Wav.Read(wavOutFile)
+            .Select(s => s.Left).ToArray();
+
+        using (TextWriter writer = new StreamWriter(Path.ChangeExtension(inWavFile, ".g.md"))) {
+            writer.WriteLine("MIDI");
+            foreach (var fft in Complex.ShortTimeFourierTransform(
+                            dataIn, 1024 * 4, Shapes.Hann)) {
+                var span = System.Audio.Process.Translate(
+                    fft, Stereo.Hz);
+                Print.Dump(writer, span, 1024 * 4, Stereo.Hz);
+            }
+        }
 
         Console.Write($"\r\nReady!\r\n\r\n");
 

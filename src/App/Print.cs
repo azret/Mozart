@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Audio;
 using System.Collections.Generic;
+using System.IO;
 
 public static class Print {
     public static void Dump(IEnumerable<Complex[]> fft) {
@@ -18,38 +20,30 @@ public static class Print {
         }
     }
 
-    public static void Dump(IEnumerable<Complex[]> fft, int hz) {
-        foreach (Complex[] i in fft) {
-            Dump(i, hz);
+    public static void Dump(TextWriter Console, IEnumerable<Frequency[]> span, int samples, int hz) {
+        foreach (Frequency[] i in span) {
+            Dump(Console, i, samples, hz);
         }
     }
 
-    public static void Dump(Complex[] fft, int hz) {
-        var samples = fft.Length;
+    public static void Dump(TextWriter Console, IEnumerable<Frequency> span, int samples, int hz) {
         double duration
             = Math.Round(samples / (double)hz, 4);
         double h = hz
             / (double)samples;
         int cc = 0;
-        for (int s = 0; s < samples / 2; s++) {
-            var f =
-                    h * 0.5 + (s * h);
-            double vol = 2 * fft[s].Magnitude;
-            var dB = System.Audio.dB.FromAmplitude(vol);
-            if (!Ranges.IsInRange(f, dB)) {
-                vol = 0;
-                dB = int.MinValue;
-            }
-            if ((dB != int.MinValue) && vol > 0 && vol <= 1) {
+        foreach (var it in span) {
+            var dB = System.Audio.dB.FromAmplitude(it.Vol);
+            if ((dB != int.MinValue) && it.Vol > 0 && it.Vol <= 1) {
                 if (cc == 0) {
                     Console.Write($"{duration}s ║");
                 }
                 if (dB < 0) {
-                    Console.Write($" {f:n2}Hz{dB}dB");
+                    Console.Write($" {it.Freq:n2}Hz{dB}dB");
                 } else if (dB > 0) {
-                    Console.Write($" {f:n2}Hz+{dB}dB");
+                    Console.Write($" {it.Freq:n2}Hz+{dB}dB");
                 } else {
-                    Console.Write($" {f:n2}Hz±0dB");
+                    Console.Write($" {it.Freq:n2}Hz±0dB");
                 }
                 cc++;
             }

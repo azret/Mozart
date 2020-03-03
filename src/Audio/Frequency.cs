@@ -16,19 +16,6 @@
                 return $"{Freq}Hz±0dB";
             };
         }
-        public static Frequency[] FromFourierTransform(Complex[] fft, int hz) {
-            int samples = fft.Length;
-            var F = new Frequency[samples / 2];
-            double h = hz
-                / (double)samples;
-            for (int s = 0; s < F.Length; s++) {
-                var f =
-                        h * 0.5 + (s * h);
-                F[s] = new Frequency((float)f, 
-                    2 * fft[s].Magnitude);
-            }
-            return F;
-        }
         public static double Parse(string t) {
             var freq = 0.0;
             switch (t) {

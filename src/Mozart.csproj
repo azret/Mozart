@@ -53,6 +53,8 @@
     <Compile Include="App\Cli.cs" />
     <Compile Include="App.cs" />
     <Compile Include="Audio\dB.cs" />
+    <Compile Include="Audio\Midi.cs" />
+    <Compile Include="Audio\Process.cs" />
     <Compile Include="Audio\Frequency.cs" />
     <Compile Include="App\Ranges.cs" />
     <Compile Include="Audio\Span.cs" />
@@ -74,17 +76,26 @@
     <Compile Include="include\Math\Tanh.cs" />
     <Compile Include="App\Print.cs" />
     <Compile Include="App\Stream.cs" />
-    <Compile Include="Play\Play.cs" />
+    <Compile Include="Play\Score.cs" />
     <Compile Include="Viz\Viz.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="A4.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Elise.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
+    <None Include="Gallia.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Elise.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

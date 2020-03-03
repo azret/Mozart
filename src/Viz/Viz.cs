@@ -48,7 +48,8 @@ partial class App {
 
             if (it == null) return null;
 
-            Frequency[] z = Frequency.FromFourierTransform(it, hz);
+            // Frequency[] z = Process.Translate(it, hz);
+            Frequency[] z = null;
 
             Pixel2D?[] Yaxis = new Pixel2D?[z.Length];
 

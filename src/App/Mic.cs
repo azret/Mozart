@@ -8,7 +8,7 @@ unsafe partial class App {
     public Mic32 Mic;
 
     Mic32 OpenMic() {
-        var hMic32 = new Microsoft.WinMM.Mic32(1024, Stereo.Hz, (hMic, hWaveHeader) => {
+        var hMic32 = new Microsoft.WinMM.Mic32(1024 * 4, 44100, (hMic, hWaveHeader) => {
             WaveHeader* pwh = (WaveHeader*)hWaveHeader;
             if (pwh != null) {
                 short* psData =
@@ -23,7 +23,7 @@ unsafe partial class App {
                     WinMM.ErrorSource.WaveIn);
                 var fft = Complex.FFT(X);
                 Stream.Push(fft);
-                Print.Dump(fft, Stream.Hz);
+                // Print.Dump(fft, Stream.Hz);
                 Notify(null, IntPtr.Zero);
             }
         });

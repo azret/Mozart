@@ -4,9 +4,11 @@ using System.IO;
 using System.Text;
 
 namespace System.Audio {
+    // 
+    // public const int Hz = 44100;
     public static partial class Wav {
-        public static Stereo[] Read(string fileName) {
-            Stereo[] _aSamples = null;
+        public static float[] Read(string fileName, out int hz) {
+            float[] _aSamples = null;
             using (var file = System.IO.File.Open(fileName, FileMode.Open, FileAccess.Read)) {
                 if (file.ReadStr(4) != "RIFF") {
                     throw new InvalidDataException();
@@ -22,6 +24,7 @@ namespace System.Audio {
                 }
                 short _nChannels = file.ReadShort();
                 int _nHz = file.ReadInt();
+                hz = _nHz;
                 Debug.Assert(_nHz == 44100);
                 int _nBytesPerSec = file.ReadInt();
                 var nBlkAlign = file.ReadShort();
@@ -37,19 +40,19 @@ namespace System.Audio {
                         case "data":
                             var nBytesData = file.ReadInt();
                             var nSamples = (int)(nBytesData / (_nBitsPerSample / 8));
-                            _aSamples = new Stereo[nSamples / _nChannels];
+                            _aSamples = new float[nSamples / _nChannels];
                             for (int i = 0; i < _aSamples.Length; i++) {
                                 switch (_nBitsPerSample) {
                                     case 8:
-                                        _aSamples[i].Left = file.ReadByte() - 128;
-                                        _aSamples[i].Right = _aSamples[i].Left;
+                                        _aSamples[i] = file.ReadByte() - 128;
+                                        // _aSamples[i].Right = _aSamples[i].Left;
                                         Debug.Assert(_nChannels == 1);
                                         break;
                                     case 16:
-                                        _aSamples[i].Left = file.ReadShort() / 32767.0f;
-                                        _aSamples[i].Right = _aSamples[i].Left;
+                                        var ch1 = file.ReadShort() / 32767.0f;
+                                        _aSamples[i] = ch1;
                                         if (_nChannels == 2) {
-                                            _aSamples[i].Right = file.ReadShort() / 32767.0f;
+                                            var ch2 = file.ReadShort() / 32767.0f;
                                         } else {
                                             Debug.Assert(_nChannels == 1);
                                         }
@@ -68,7 +71,7 @@ namespace System.Audio {
             }
             return _aSamples;
         }
-        public static void Write(string fileName, IEnumerable<float[]> data) {
+        public static void Write(string fileName, IEnumerable<float[]> data, int Hz) {
             short _nChannels = 2,
                 _nBitsPerSample = 16;
             using (FileStream file = System.IO.File.Create(fileName)) {
@@ -81,8 +84,8 @@ namespace System.Audio {
                 file.WriteInt(16);
                 file.WriteShort((short)1);
                 file.WriteShort((short)_nChannels);
-                file.WriteInt(Stereo.Hz);
-                file.WriteInt(Stereo.Hz * _nChannels * _nBitsPerSample / 8);
+                file.WriteInt(Hz);
+                file.WriteInt(Hz * _nChannels * _nBitsPerSample / 8);
                 file.WriteShort((short)(_nChannels * _nBitsPerSample / 8));
                 file.WriteShort((short)_nBitsPerSample);
                 file.WriteString("data");
