@@ -16,13 +16,17 @@ partial class App {
             throw new ArgumentException();
         }
         app.StartWinUI<App>(
-            onDrawWave, () => app, "Signal",
+            onDrawSpectrogram, () => app, "Spectrogram",
+            Color.Black,
+            app.onKeyDown);
+        app.StartWinUI<App>(
+            onDrawWave2, () => app, "Wave",
             Color.Black,
             app.onKeyDown);
         return false;
     }
 
-    static void onDrawWave(Surface2D Canvas, float phase, App app) {
+    static void onDrawSpectrogram(Surface2D Canvas, float phase, App app) {
         int hz = app?.Stream?.Hz ?? 0;
 
         Complex[][] Model = null;

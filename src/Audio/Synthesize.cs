@@ -2,7 +2,7 @@
     using System;
     using System.Collections.Generic;
     public static partial class Wav {
-        public static IEnumerable<float[]> Synthesize(IEnumerable<Set> music) {
+        public static IEnumerable<float[]> Synthesize(IEnumerable<Span> music) {
             foreach (var it in music) {
                 if (it.Seconds > 0) {
                     yield return Synthesize(it.Seconds, it);
@@ -16,7 +16,7 @@
                 double t
                     = 2d * System.Math.PI * k * (1d / Stereo.Hz);
                 signal[k]
-                    = Synthesize(F, t);
+                    = Synthesize(F, t) * (float)Shapes.Hann(k, signal.Length);
             }
             return signal;
         }

@@ -13,12 +13,14 @@ partial class App {
             return false;
         }
 
-        var inWav = File.Exists(cliScript)
-            ? Wav.Parse(cliScript)
+        var inWavFile = Path.Combine(app.CurrentDirectory, cliScript);
+
+        var inWav = File.Exists(inWavFile)
+            ? Wav.Parse(inWavFile)
             : Wav.Parse(cliScript, "MIDI");
 
-        var wavOutFile = File.Exists(cliScript)
-            ? Path.GetFullPath(Path.ChangeExtension(cliScript, ".g.wav"))
+        var wavOutFile = File.Exists(inWavFile)
+            ? Path.GetFullPath(Path.ChangeExtension(inWavFile, ".g.wav"))
             : Path.GetFullPath(Path.ChangeExtension("cli.wav", ".g.wav"));
 
         Console.Write($"\r\nSynthesizing...\r\n\r\n");

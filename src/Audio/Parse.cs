@@ -3,11 +3,11 @@ using System.IO;
 
 namespace System.Audio {
     public static partial class Wav {
-        public static IEnumerable<Set> Parse(string aSz, string fmt) {
+        public static IEnumerable<Span> Parse(string aSz, string fmt) {
             var Model = ParseVector(fmt, aSz, "0.8", 0);
             yield return Model;
         }
-        public static IEnumerable<Set> Parse(string inputFilePath) {
+        public static IEnumerable<Span> Parse(string inputFilePath) {
             string fmt = null;
             Console.Write($"\r\nReading from \"{inputFilePath}\"...\r\n\r\n");
             string[] lines = File.ReadAllLines(inputFilePath);
@@ -15,8 +15,8 @@ namespace System.Audio {
             Console.Write($"Ready!\r\n\r\n");
             return Model;
         }
-        public static IEnumerable<Set> Parse(ref string fmt, string[] lines) {
-            var Model = new Set[lines.Length - 1];
+        public static IEnumerable<Span> Parse(ref string fmt, string[] lines) {
+            var Model = new Span[lines.Length - 1];
             for (int i = 0; i < lines.Length; i++) {
                 string sz = lines[i];
                 if (string.IsNullOrWhiteSpace(sz)) {
@@ -73,7 +73,7 @@ namespace System.Audio {
                 }
             }
         }
-        public static Set ParseVector(string aFmt, string aSz) {
+        static Span ParseVector(string aFmt, string aSz) {
             if (aFmt == "MIDI") {
             } else {
                 throw new InvalidDataException("Invalid format.");
@@ -99,13 +99,13 @@ namespace System.Audio {
             }
             return ParseVector(aFmt, aSz, d, i);
         }
-        public static Set ParseVector(string aFmt, string aSz, string d, int i) {
+        static Span ParseVector(string aFmt, string aSz, string d, int i) {
             if (aFmt == "MIDI") {
             } else {
                 throw new InvalidDataException("Invalid format.");
             }
             List<Frequency> aList;
-            Set aIt = new Set(float.Parse(d),
+            Span aIt = new Span(float.Parse(d),
                     aList = new List<Frequency>());
             for (; ; ) {
                 while (i < aSz.Length && (aSz[i] == '\t' || aSz[i] == ' ' || aSz[i] == '•' || aSz[i] == '|' || aSz[i] == '⁞' ||
@@ -142,7 +142,7 @@ namespace System.Audio {
                             i++;
                         }
                     }
-                    var f = Midi.Parse(Freq);
+                    var f = Frequency.Parse(Freq);
                     if (string.IsNullOrWhiteSpace(dB)) {
                         dB = "0";
                     }

@@ -55,7 +55,7 @@
     <Compile Include="Audio\dB.cs" />
     <Compile Include="Audio\Frequency.cs" />
     <Compile Include="App\Ranges.cs" />
-    <Compile Include="Audio\Set.cs" />
+    <Compile Include="Audio\Span.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
@@ -80,6 +80,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="play.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />

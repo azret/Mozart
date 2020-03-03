@@ -4,11 +4,11 @@ using System.Diagnostics;
 
 namespace System.Audio {
     [DebuggerDisplay("{Seconds}s")]
-    public class Set : IEnumerable<Frequency> {
+    public class Span : IEnumerable<Frequency> {
         public readonly float Seconds;
         readonly
             IEnumerable<Frequency> _items;
-        public Set(float seconds, IEnumerable<Frequency> items) {
+        public Span(float seconds, IEnumerable<Frequency> items) {
             Seconds = seconds;
             _items = items;
         }
