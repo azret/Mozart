@@ -64,7 +64,6 @@
     <Compile Include="Audio\Synthesize.cs" />
     <Compile Include="Audio\Stereo.cs" />
     <Compile Include="Audio\Wav.cs" />
-    <Compile Include="Audio\Midi.cs" />
     <Compile Include="include\Math\Complex.cs" />
     <Compile Include="include\Math\IFunc.cs" />
     <Compile Include="include\Math\Random.cs" />
@@ -80,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="play.md">
+    <None Include="Elise.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

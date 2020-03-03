@@ -25,7 +25,7 @@ unsafe partial class App {
         step++;
 
         for (int s = 0; s < samples; s++) {
-            var f = Midi.KeyToFreq(step % Midi.Tones.Length);
+            var f = Random.Next() % hz;
             var ampl =
                 Math.Sin(f * 2d * Math.PI * s * (1d / hz) + phase);
             // ampl +=
@@ -46,7 +46,7 @@ unsafe partial class App {
 
         // Print.Dump(fft, Stream.Hz);
 
-        if (step >= Midi.Tones.Length) {
+        if (step >= 450) {
             for (int s = 0; s < samples; s++) {
                 fft[s].Scale(1f);
             }

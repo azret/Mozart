@@ -23,7 +23,7 @@ unsafe partial class App {
                     WinMM.ErrorSource.WaveIn);
                 var fft = Complex.FFT(X);
                 Stream.Push(fft);
-                // Print.Dump(fft, Stream.Hz);
+                Print.Dump(fft, Stream.Hz);
                 Notify(null, IntPtr.Zero);
             }
         });

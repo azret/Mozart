@@ -9,6 +9,7 @@
                 }
             }
         }
+        // * (float)Shapes.Hann(k, signal.Length)
         public static float[] Synthesize(float seconds, IEnumerable<Frequency> F) {
             var samples = (int)Math.Ceiling(seconds * Stereo.Hz);
             float[] signal = new float[samples];
@@ -16,7 +17,7 @@
                 double t
                     = 2d * System.Math.PI * k * (1d / Stereo.Hz);
                 signal[k]
-                    = Synthesize(F, t) * (float)Shapes.Hann(k, signal.Length);
+                    = Synthesize(F, t);
             }
             return signal;
         }

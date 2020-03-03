@@ -148,7 +148,7 @@ namespace System.Audio {
                     }
                     aList.Add(new Frequency(
                         (float)f,
-                        (float)System.Audio.dB.ToAmplitude((int)(dir * double.Parse(dB)))));
+                        20 + (float)System.Audio.dB.ToAmplitude((int)(dir * double.Parse(dB)))));
                 } else /* End of Line */ {
                     break;
                 }

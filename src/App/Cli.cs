@@ -36,7 +36,8 @@ unsafe partial class App {
                     typeof(App).Assembly.Location);
                 cliScript = Console.ReadLine();
                 if (cliScript == null) {
-                    break;
+                    HasCtrlBreak = false;
+                    continue;
                 }
                 try {
                     HasCtrlBreak = Exec(
