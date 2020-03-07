@@ -15,7 +15,7 @@ unsafe partial class App {
         float phase = GetLocalTime();
 
         int samples = 2048;
-            int hz = Stream.Hz;
+            int hz = 44100;
 
         var duration =
                 Math.Round((double)samples / hz, 4);

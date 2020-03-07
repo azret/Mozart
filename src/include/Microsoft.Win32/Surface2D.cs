@@ -28,10 +28,17 @@
     }
 
     public class Surface2D : IDisposable {
+        public static int linear(float val, float from, float to) {
+            return (int)(val * to / from);
+        }
         public struct Quantum {
-            const float ALIGN = 2.0f;
+            const float ALIGN = 4.0f;
             public readonly int Value;
-            public Quantum(double value) { Value = (int)(Math.Floor(value / (float)ALIGN) * ALIGN); }
+            public Quantum(double value) {
+                var val = (int)((int)(value / ALIGN) * ALIGN);
+                Debug.Assert(val <= value);
+                Value = val;
+            }
             public Quantum(int value) : this((double)value) { }
         }
         public Bitmap hBitMap;
@@ -56,7 +63,7 @@
             Title = null;
             hData = hBitMap?.LockBits(
                 new Rectangle(0, 0, hBitMap.Width, hBitMap.Height),
-                ImageLockMode.ReadWrite,
+                ImageLockMode.WriteOnly,
                 hBitMap.PixelFormat
             );
         }
@@ -86,7 +93,7 @@
                     byte R = bgColor.R, G = bgColor.G, B = bgColor.B;
                     var offst = (int)(((ulong)p - (ulong)pBuff) / 3);
                     int x = (offst % hData.Width);
-                    int y = (int)Math.Floor(offst / (double)hData.Width);
+                    int y = (offst / hData.Width);
                     U = U * 25214903917 + 11;
                     Debug.Assert(offst == i);
                     *p = B; /*B*/ p++;
@@ -120,50 +127,6 @@
             return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
         }
 
-        public void Fill(Func<int, Color> bgColor) {
-            if (hData == null) return;
-            long U = Environment.TickCount;
-            unsafe {
-                int per = hData.Stride / hData.Width;
-                Debug.Assert(3 == per);
-                byte* bBuff = (byte*)hData.Scan0.ToPointer();
-                int cbBuff = hData.Stride
-                    * hData.Height;
-                int i = 0;
-                for (byte* p = bBuff; p < bBuff + cbBuff;) {
-                    var offst = (int)(((ulong)p - (ulong)bBuff) / 3);
-                    var colr = bgColor(offst);
-                    byte R = colr.R, G = colr.G, B = colr.B;
-                    int x = (offst % hData.Width);
-                    int y = (int)Math.Floor(offst / (double)hData.Width);
-                    U = U * 25214903917 + 11;
-                    Debug.Assert(offst == i);
-                    *p = B; /*B*/ p++;
-                    *p = G; /*G*/ p++;
-                    *p = R; /*R*/ p++;
-                    PIXEL(x, y, colr.R, colr.G, colr.B);
-                    PIXEL(x + 1, y, colr.R, colr.G, colr.B);
-                    PIXEL(x - 1, y, colr.R, colr.G, colr.B);
-                    PIXEL(x, y + 1, colr.R, colr.G, colr.B);
-                    PIXEL(x, y - 1, colr.R, colr.G, colr.B);
-                    i++;
-                }
-                void PIXEL(int x, int y, byte R = 0, byte G = 0, byte B = 0) {
-                    int sample = x * per;
-                    if ((sample >= 0 && sample < hData.Stride) &&
-                            (y >= 0 && y < hData.Height)) {
-                        int offst = (y * hData.Stride) + sample;
-                        if (offst >= 0 && offst < cbBuff)
-                            bBuff[offst] = B;
-                        if (offst + 1 >= 0 && offst < cbBuff)
-                            bBuff[offst + 1] = G;
-                        if (offst + 2 >= 0 && offst < cbBuff)
-                            bBuff[offst + 2] = R;
-                    }
-                }
-            }
-        }
-
         public void Plot(Func<float, Pixel2D?> F,
             float LEN, bool bBars = false, float INCR = 1.0f, float START = 0.0f,
             float NORM = 1.0f) {
@@ -188,8 +151,7 @@
                             bBuff[offst + 2] = R;
                     }
                 }
-                int M =
-                    (int)Math.Floor(hData.Height * 0.5d);
+                int M = (hData.Height / 2);
                 void DOT(int x, int y, byte R = 0, byte G = 0, byte B = 0) {
                     PIXEL(x, y, R, G, B);
                     PIXEL(x, y - 1, R, G, B);
@@ -216,9 +178,6 @@
                     var ret = F(I);
                     if (!ret.HasValue) {
                         continue;
-                    }
-                    int linear(float val, float from, float to) {
-                        return (int)(val * to / from);
                     }
                     int horz = (int)linear(I,
                        LEN,
@@ -273,9 +232,6 @@
                 for (int i = 0; i < cc; i++) {
                     if (i >= data.Length) {
                         break;
-                    }
-                    int linear(float val, float from, float to) {
-                        return (int)Math.Floor(val * to / from);
                     }
                     int horz = linear(i, cc, Width);
                     Pixel2D?[] Q = F(data[i], i)?.ToArray();
@@ -353,10 +309,7 @@
                             bBuff[offst + 2] = R;
                     }
                 }
-                int M = (int)Math.Floor((hData.Height) * 0.5d);
-                int linear(double val, double from, double to) {
-                    return (int)Math.Floor(val * to / from);
-                }
+                int M = (int)((hData.Height) / 2);
                 void DOT(int x, int y, byte R = 0, byte G = 0, byte B = 0) {
                     SetPixel(x, y, R, G, B);
                     if (!bBars) {
@@ -392,7 +345,7 @@
                     if (ampl < -1 || ampl > +1) {
                         throw new IndexOutOfRangeException();
                     }
-                    int y = linear(-ampl, 1, M) + M;
+                    int y = linear(-(float)ampl, 1, M) + M;
                     var c = color(x, hData.Width);
                     DOT(
                         x,

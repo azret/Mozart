@@ -47,25 +47,22 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="App\WinUI.cs" />
-    <Compile Include="App\Mic.cs" />
-    <Compile Include="App\Loop.cs" />
-    <Compile Include="App\Cli.cs" />
+    <Compile Include="Cli\Mic.cs" />
+    <Compile Include="Process\ISource.cs" />
+    <Compile Include="include\Wav\TimeSpan.cs" />
+    <Compile Include="Mic\Mic.cs" />
+    <Compile Include="Viz\Fourier.cs" />
     <Compile Include="App.cs" />
-    <Compile Include="Audio\dB.cs" />
-    <Compile Include="Audio\Midi.cs" />
-    <Compile Include="Audio\Process.cs" />
-    <Compile Include="Audio\Frequency.cs" />
-    <Compile Include="App\Ranges.cs" />
-    <Compile Include="Audio\Span.cs" />
+    <Compile Include="include\Wav\dB.cs" />
+    <Compile Include="include\Wav\Scale.cs" />
+    <Compile Include="Process\Process.cs" />
+    <Compile Include="include\Wav\Frequency.cs" />
+    <Compile Include="Process\Ranges.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
     <Compile Include="include\Microsoft.Win32\Win32.cs" />
-    <Compile Include="Audio\Parse.cs" />
-    <Compile Include="Audio\Synthesize.cs" />
-    <Compile Include="Audio\Stereo.cs" />
-    <Compile Include="Audio\Wav.cs" />
+    <Compile Include="include\Wav\Wav.cs" />
     <Compile Include="include\Math\Complex.cs" />
     <Compile Include="include\Math\IFunc.cs" />
     <Compile Include="include\Math\Random.cs" />
@@ -74,26 +71,25 @@
     <Compile Include="include\Math\Sigmoid.cs" />
     <Compile Include="include\Math\SigQ.cs" />
     <Compile Include="include\Math\Tanh.cs" />
-    <Compile Include="App\Print.cs" />
-    <Compile Include="App\Stream.cs" />
-    <Compile Include="Play\Score.cs" />
-    <Compile Include="Viz\Viz.cs" />
+    <Compile Include="Process\Print.cs" />
+    <Compile Include="Process\Source.cs" />
+    <Compile Include="Viz\Mic.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="A4.md">
+    <None Include="data\A4.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Elise.md">
+    <None Include="data\Elise.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
-    <None Include="Gallia.wav">
+    <None Include="data\Gallia.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Elise.wav">
+    <None Include="data\Elise.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

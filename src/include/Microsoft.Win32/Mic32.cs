@@ -4,7 +4,9 @@
     using Microsoft.Win32;
 
     public sealed class Mic32 : IDisposable {
-        private object _lock = new object();
+        private object _dataLock = new object(),
+            _disposeLock = new object();
+
         private IntPtr _hwih;
         private WinMM.WaveInProc _hwiproc;
         private int _cc;
@@ -27,17 +29,23 @@
             this._wfx.cbSize = 0;
             this._hwiproc = new WinMM.WaveInProc((IntPtr waveInHandle, WinMM.WaveInMessage message,
                         IntPtr instance, IntPtr wh, IntPtr param2) => {
-                if (onReady != null && message == WinMM.WaveInMessage.DataReady) {
-                    onReady(this, wh);
-                }
-            });
+                            lock (_disposeLock) {
+                                try {
+                                    if (_hwih != IntPtr.Zero &&
+                                            onReady != null && message == WinMM.WaveInMessage.DataReady) {
+                                        onReady(this, wh);
+                                    }
+                                } catch (WinMMException) {
+                                }
+                            }
+                        });
         }
 
         float[] _CH1;
         float[] _CH2;
 
         public unsafe void CaptureData(WaveHeader* pwh, short* psData) {
-            lock (_lock) {
+            lock (_dataLock) {
                 for (int s = 0; s < _cc; s++) {
                     float ch1 = (psData[(s * Channels)] / 32767.0f),
                         ch2 = (psData[(s * Channels) + 1] / 32767.0f);
@@ -47,9 +55,18 @@
             }
         }
 
+        public unsafe void CaptureData(float[] ch1) {
+            lock (_dataLock) {
+                for (int s = 0; s < _cc; s++) {
+                    _CH1[s] = (float)ch1[s];
+                    _CH2[s] = 0;
+                }
+            }
+        }
+
         public float[] CH1() {
             float[] local;
-            lock (_lock) {
+            lock (_dataLock) {
                 local = (float[])_CH1.Clone();
             }
             return local;
@@ -100,11 +117,14 @@
         }
 
         public void Close() {
-            this.FreeHeaders();
-            if (this._hwih == IntPtr.Zero) return;
-            _isMuted = true;
-            WinMM.waveInClose(this._hwih);
-            this._hwih = IntPtr.Zero;
+            lock (_disposeLock) {
+                Mute();
+                if (this._hwih == IntPtr.Zero) return;
+                WinMM.waveInClose(this._hwih);
+                this.FreeHeaders();
+                _isMuted = true;
+                this._hwih = IntPtr.Zero;
+            }
         }
 
         IntPtr[] _headers = new IntPtr[32];
@@ -163,15 +183,9 @@
 
         public void Toggle() {
             if (!_isMuted) {
-                _isMuted = true;
-                WinMM.Throw(
-                    WinMM.waveInStop(this._hwih),
-                    WinMM.ErrorSource.WaveIn);
+                Mute();
             } else {
-                WinMM.Throw(
-                   WinMM.waveInStart(this._hwih),
-                   WinMM.ErrorSource.WaveIn);
-                _isMuted = false;
+                UnMute();
             }
         }
 
@@ -195,7 +209,7 @@
         }
 
         void Dispose(bool disposing) {
-            if (this._hwih != null) {
+            if (this._hwih != IntPtr.Zero) {
                 this.Close();
             }
         }

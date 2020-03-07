@@ -38,7 +38,7 @@ partial class App {
             }
         }
 
-        List<Span> music = new List<Span>();
+        List<System.Audio.TimeSpan> music = new List<System.Audio.TimeSpan>();
 
         int samples = 1024;
 
@@ -51,7 +51,7 @@ partial class App {
             var duration =
                     Math.Round((double)fft.Length / (double)hz, 4);
 
-            music.Add(new Span((float)duration, span));
+            music.Add(new System.Audio.TimeSpan((float)duration, span));
 
             Print.Dump(Console.Out, span, samples, hz);
 

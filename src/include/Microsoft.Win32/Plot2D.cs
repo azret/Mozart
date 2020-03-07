@@ -146,7 +146,6 @@
             lpfnWndProcPtr = null;
             hSurface2D?.Dispose();
         }
-
         public delegate int KeyDown(IntPtr hWnd, WM msg, IntPtr wParam, IntPtr lParam, T GetSession);
         void OnPaint(DrawFrame onDrawFrame, Func<T> userState, float scale, IntPtr hWnd) {
             IntPtr hdc = User32.BeginPaint(hWnd, out PAINTSTRUCT ps);
@@ -164,14 +163,17 @@
                 Membitrect.Right - Membitrect.Left,
                 Membitrect.Bottom - Membitrect.Top);
             User32.SelectObject(Memhdc, Membitmap);
-            if (_ClassTemplate._lpwcx.hbrBackground != IntPtr.Zero) {
-                User32.FillRect(Memhdc, ref Membitrect,
-                        _ClassTemplate._lpwcx.hbrBackground);
-            }
+            // if (_ClassTemplate._lpwcx.hbrBackground != IntPtr.Zero) {
+            //     User32.FillRect(Memhdc, ref Membitrect,
+            //             _ClassTemplate._lpwcx.hbrBackground);
+            // }
             Graphics _g = Graphics.FromHdc(Memhdc);
+            var bgBrush = new SolidBrush(_bgColor);
+            _g.FillRectangle(bgBrush, 0, 0, Membitrect.Right - Membitrect.Left, Membitrect.Bottom - Membitrect.Top);
             hSurface2D.BeginPaint();
             var phase = GetLocalTime();
             try {
+                hSurface2D.Fill(_bgColor);
                 onDrawFrame?.Invoke(hSurface2D,
                     phase, userState != null ?
                         userState.Invoke() : null);
@@ -206,6 +208,8 @@
                      Membitrect.Top
                          + (Membitrect.Bottom - Membitrect.Top) - 26 - 8);
             }
+
+            _g.DrawPath(Pens.Aqua, new System.Drawing.Drawing2D.GraphicsPath());
 
             /*
             if (hSurface2D.Title == null) {

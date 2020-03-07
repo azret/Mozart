@@ -1,5 +1,6 @@
 ﻿namespace System.Audio {
     public struct dB {
+        public int Value;
         public static int FromAmplitude(double amplitude) {
             return (int)(20.0 * System.Math.Log10(amplitude));
         }

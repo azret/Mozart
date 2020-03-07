@@ -4,6 +4,11 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Microsoft {
+    public class WinMMException : SystemException {
+        public WinMMException(string message)
+            : base(message) {
+        }
+    }
     namespace Win32 {
         public static class User32 {
             #region gdi32.dll
@@ -585,7 +590,7 @@ namespace Microsoft {
                 } else {
                     details = detailsBuilder.ToString() + " (" + error.ToString() + ")";
                 }
-                throw new InvalidProgramException(details.ToString());
+                throw new WinMMException(details.ToString());
             }
             [DllImport("winmm.dll", SetLastError = true, CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Winapi)]
             public static extern MMSYSERROR waveInGetErrorText(MMSYSERROR mmrError, StringBuilder pszText, int cchText);
