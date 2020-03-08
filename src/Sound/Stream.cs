@@ -1,5 +1,20 @@
-﻿public class Stream : IStream {
+﻿using System;
+
+public class Stream : IStream {
     object _lock = new object();
+
+    long _startTime = 0;
+
+    public float GetLocalTime() {
+        if (_startTime == 0) { _startTime = Environment.TickCount; }
+        return (Environment.TickCount - _startTime) * 0.001f;
+    }
+
+    public float Phase {
+        get {
+            return GetLocalTime();
+        }
+    }
 
     public float Hz => 44100;
 

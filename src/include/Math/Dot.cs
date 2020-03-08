@@ -43,14 +43,14 @@
             HashCode = hashCode;
         }
         public readonly string Id;
-        public Complex Score;
+        public Complex z;
         public double Add(float re = 1.0f) {
-            Score.Re = Score.Re + re;
-            return Score.Re;
+            z.Re = z.Re + re;
+            return z.Re;
         }
         public double Multi(float re = 1.0f) {
-            Score.Re = Score.Re * re;
-            return Score.Re;
+            z.Re = z.Re * re;
+            return z.Re;
         }
         public readonly int HashCode;
         public override int GetHashCode() => HashCode;
@@ -77,7 +77,7 @@
                     ? 0
                     : 1;
             } else {
-                return a.Score.Re.CompareTo(b.Score.Re);
+                return a.z.Re.CompareTo(b.z.Re);
             }
         }
         public int CompareTo(Dot other) {

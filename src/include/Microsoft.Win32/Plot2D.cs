@@ -9,7 +9,7 @@
     using Microsoft.Win32;
 
     public class Plot2D {
-        public static readonly Font Font = new Font("Consolas", 13.5f);
+        public static readonly Font Font = new Font("Consolas", 14.5f);
     }
 
     public class Plot2D<T> : Plot2D, IDisposable

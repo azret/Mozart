@@ -69,7 +69,9 @@ unsafe partial class App {
             App app,
             string cliString,
             Func<bool> IsTerminated) {
-        if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
+        if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase) 
+                    || cliString.StartsWith("cbow", StringComparison.OrdinalIgnoreCase)) {
+        } else if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
             return ShowMic(
                 app,
                 cliString,

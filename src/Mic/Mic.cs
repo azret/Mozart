@@ -100,9 +100,29 @@ unsafe partial class App {
     }
 
     static void DrawMic(Graphics g, RectangleF clientRect, float phase, IStream Source) {
+        phase = Source?.Phase ?? 0;
+
         float hz = Source?.Hz ?? 0;
         var X = Source?.Peek();
         if (X == null) return;
+
+        var pen = Pens.LightGray;
+
+        for (int x = 0; x < clientRect.Width; x++) {
+            if (x > 0 && x % 13 == 0) {
+                g.DrawLine(pen,
+                    new PointF(x, 0),
+                    new PointF(x, clientRect.Height));
+            }
+        }
+        for (int y = 0; y < clientRect.Height; y++) {
+            if (y > 0 && y % 13 == 0) {
+                g.DrawLine(pen,
+                    new PointF(0, y),
+                    new PointF(clientRect.Width, y));
+            }
+        }
+
         Sound.Math.Envelope(X);
 
         DrawCurve(Color.Gray, g, clientRect, X, 2f);
@@ -119,7 +139,7 @@ unsafe partial class App {
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
-                s, Plot2D.Font, Brushes.LightGray, clientRect.Right - 8 - sz.Width,
+                s, Plot2D.Font, Brushes.LimeGreen, clientRect.Right - 8 - sz.Width,
                  8);
         }
     }

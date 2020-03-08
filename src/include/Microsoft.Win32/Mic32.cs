@@ -7,9 +7,18 @@
         private object _dataLock = new object(),
             _disposeLock = new object();
 
+        private int _cc;
         private IntPtr _hwih;
         private WinMM.WaveInProc _hwiproc;
-        private int _cc;
+
+        long _startTime = 0;
+
+        public float GetLocalTime() {
+            if (_startTime == 0) { _startTime = Environment.TickCount; }
+            return (Environment.TickCount - _startTime) * 0.001f;
+        }
+
+        public float Phase => GetLocalTime();
 
         public Mic32(int cc, int nSamplesPerSec, Action<Mic32, IntPtr> onReady) {
             var m = (int)Math.Log(cc, 2);

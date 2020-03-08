@@ -1,11 +1,105 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 namespace System.Ai {
     public static partial class CBOW {
+        const int SIZE = 1048576,
+            GENS = (int)1e6,
+                SHUFFLE = (int)1e7;
+
+        public static bool Train(string currentDirectory, string searchPattern,
+            Func<bool> IsTerminated) {
+            var Model = new Matrix(SIZE);
+            // TrainMikolovModel(MakeFiles(new string[] { currentDirectory },
+            //     searchPattern, SearchOption.AllDirectories),
+            //     new Orthography(),
+            //     Model,
+            //     (loss) => { },
+            //     IsTerminated);
+            // Model.SaveToFile(
+            //     Matrix.Sort(Model),
+            //     "CBOW",
+            //     CBOW.DIMS,
+            //     session.OutputFileName);
+            return false;
+        }
+
+        static void TrainMikolovModel(Set sourceFiles, IOrthography lex,
+            Matrix Model, Action<double> SetLoss, Func<bool> HasCtrlBreak) {
+            if (Model == null) {
+                Console.WriteLine("Model not loaded.");
+                return;
+            }
+            Vector[] negDistr = System.Ai.CBOW.CreateNegDistr(
+                Model, SHUFFLE);
+            Thread[] threads = new Thread[Environment.ProcessorCount * 2];
+            int numberOfThreads = 0,
+                verbOut = 0;
+            for (var t = 0; t < threads.Length; t++) {
+                threads[t] = new Thread(() => {
+                    Interlocked.Increment(ref numberOfThreads);
+                    try {
+                        for (int iter = 0; iter < GENS; iter++) {
+                            if (HasCtrlBreak != null && HasCtrlBreak()) {
+                                break;
+                            }
+                            string[] Shuffle = ((IEnumerable<string>)sourceFiles).ToArray();
+                            global::Random.Shuffle(Shuffle, Shuffle.Length);
+                            foreach (string file in Shuffle) {
+                                if (HasCtrlBreak != null && HasCtrlBreak()) {
+                                    return;
+                                }
+                                try {
+                                    Console.Write($"\r\nReading {file}...\r\n");
+                                    var textFragment = File.ReadAllText(file);
+                                    string[] slidingWindow
+                                        = new string[2 * System.Ai.CBOW.WINDOW + 1];
+                                    foreach (var q
+                                            in PlainText.ForEach(textFragment, 0, textFragment.Length, 1 + (slidingWindow.Length >> 1))) {
+                                        if (HasCtrlBreak != null && HasCtrlBreak()) {
+                                            return;
+                                        }
+                                        var vocab = q.Type == PlainTextTag.TAG
+                                            ? lex.GetKey(textFragment.Substring(
+                                                q.StartIndex,
+                                                q.Length))
+                                            : null;
+                                        for (int i = 0; i < slidingWindow.Length; i++) {
+                                            if (i == slidingWindow.Length - 1) {
+                                                slidingWindow[i] = vocab;
+                                            } else {
+                                                slidingWindow[i] = slidingWindow[i + 1];
+                                            }
+                                        }
+                                        SetLoss(System.Ai.CBOW.learnWindow(Model,
+                                            negDistr, slidingWindow,
+                                            iter,
+                                            HasCtrlBreak, ref verbOut));
+                                    }
+                                    Thread.Sleep(3000 + global::Random.Next(3000));
+                                } finally {
+                                }
+                            }
+                        }
+                    } finally {
+                        Interlocked.Decrement(ref numberOfThreads);
+                    }
+                    Console.Write($"[{Thread.CurrentThread.ManagedThreadId}] stopped...\r\n");
+                });
+            }
+            foreach (var t in threads) { t.Start(); }
+            foreach (var t in threads) {
+                t.Join();
+            }
+            Debug.Assert(numberOfThreads == 0);
+        }
+
         public static double PowScale(double score) {
             const double POW = 0.7351;
             const int Xmax = 100;
@@ -41,7 +135,7 @@ namespace System.Ai {
                         b = j;
                         break;
                     }
-                    if (best[j].Score.Re < best[b].Score.Re) {
+                    if (best[j].z.Re < best[b].z.Re) {
                         b = j;
                     }
                 }
@@ -51,9 +145,9 @@ namespace System.Ai {
                     dot += c.Axis[j].Im * Re[j];
                 }
                 score = (float)Sigmoid.f(dot);
-                if (best[b] == null || best[b].Score.Re < score) {
+                if (best[b] == null || best[b].z.Re < score) {
                     best[b] = new Vector(c.Id, c.HashCode) {
-                        Score = new Complex() { Re = score }
+                        z = new Complex() { Re = score }
                     };
                 }
             }
@@ -78,7 +172,7 @@ namespace System.Ai {
             double norm = 0,
                     cc = 0;
             foreach (Vector g in M) {
-                norm += PowScale(g.Score.Re);
+                norm += PowScale(g.z.Re);
                 cc++;
             }
             if (norm > 0) {
@@ -86,7 +180,7 @@ namespace System.Ai {
             }
             Vector[] negDistr = new Vector[0]; int count = 0;
             foreach (Vector g in M) {
-                double samples = PowScale(g.Score.Re) * size * norm;
+                double samples = PowScale(g.z.Re) * size * norm;
                 for (int j = 0; j < samples; j++) {
                     if (count >= negDistr.Length) {
                         Array.Resize(ref negDistr, (int)((negDistr.Length + 7) * 1.75));

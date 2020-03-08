@@ -44,7 +44,7 @@ namespace System.Ai {
                             sb.Append(axis[j]);
                         }
                     }
-                    var score = it.Score.ToString();
+                    var score = it.z.ToString();
                     if (sb.Length > 0) {
                         s = $"{it.Id} | {score} | {sb.ToString()}\r\n";
                     } else {
@@ -58,6 +58,7 @@ namespace System.Ai {
             }
             Console.Write("\r\nReady!\r\n");
         }
+#if load
         public static Matrix LoadFromFile(string inputFilePath, int size, out string fmt, out int dims) {
             Matrix Model = new Matrix(size);
             fmt = null;
@@ -230,5 +231,6 @@ namespace System.Ai {
                 }
             }
         }
+#endif
     }
 }

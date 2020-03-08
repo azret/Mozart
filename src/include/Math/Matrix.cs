@@ -157,7 +157,7 @@ namespace System.Collections {
             T[] sort = Sequence(M);
             Array.Sort(
                 sort,
-                (a, b) => -a.Score.Re.CompareTo(b.Score.Re));
+                (a, b) => -a.z.Re.CompareTo(b.z.Re));
             if (take < sort.Length) {
                 Array.Resize(ref sort, take);
             }

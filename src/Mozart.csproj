@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Ai\Mikolov.cs" />
+    <Compile Include="Ai\Model.cs" />
     <Compile Include="include\Math\Dot.cs" />
     <Compile Include="include\Math\Matrix.cs" />
     <Compile Include="include\Math\Set.cs" />
@@ -96,10 +97,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
-    <None Include="Resources\Wave.ico" />
-    <None Include="Resources\Audio.ico" />
-    <None Include="Resources\Record.ico" />
-    <None Include="Resources\Mic.ico" />
+    <None Include="res\Wave.ico" />
+    <None Include="res\Audio.ico" />
+    <None Include="res\Record.ico" />
+    <None Include="res\Mic.ico" />
     <None Include="data\Gallia.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -110,8 +111,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
