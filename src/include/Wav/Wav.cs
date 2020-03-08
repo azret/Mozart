@@ -94,16 +94,13 @@ namespace System.Audio {
                         while (cc-- > 0) {
                             var vol = samples[j];
                             switch (_nBitsPerSample) {
-                                case 8:
-                                    vol *= 128;
-                                    vol = System.Math.Max(System.Math.Min(vol, 127), -128);
-                                    file.WriteByte((byte)(vol + 128));
-                                    break;
                                 case 16:
                                     vol *= 32768;
                                     vol = System.Math.Max(System.Math.Min(vol, 32767), -32768);
                                     file.WriteShort((short)(vol));
                                     break;
+                                default:
+                                    throw new InvalidDataException();
                             }
                         }
                         nSamples++;

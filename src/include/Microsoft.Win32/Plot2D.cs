@@ -8,9 +8,13 @@
     using System.Threading;
     using Microsoft.Win32;
 
-    public class Plot2D<T> : IDisposable
+    public class Plot2D {
+        public static readonly Font Font = new Font("Consolas", 13.5f);
+    }
+
+    public class Plot2D<T> : Plot2D, IDisposable
         where T: class {
-        public delegate void DrawFrame(Surface2D g, float t, T userState);
+        public delegate void DrawFrame(Graphics g, RectangleF fill, float t, T userState);
         public enum SystemIcons {
             IDI_APPLICATION = 32512,
             IDI_HAND = 32513,
@@ -25,7 +29,6 @@
         Surface2D hSurface2D;
         public IntPtr hWnd;
         Timer hTimer;
-        public readonly Font Font = new Font("Consolas", 13f);
         long _startTime = 0;
         public float GetLocalTime() {
             if (_startTime == 0) { _startTime = Environment.TickCount; }
@@ -77,7 +80,7 @@
         }
         ClassTemplate _ClassTemplate;
         public Plot2D(string title, DrawFrame onDrawFrame, KeyDown onKeyDown, TimeSpan framesPerSecond,
-            Func<T> getFrame, Color bgColor) {
+            Func<T> getFrame, Color bgColor, System.Drawing.Icon hIcon, Size? sz) {
             _getFrame = getFrame;
             _onDrawFrame = onDrawFrame;
             _onKeyDown = onKeyDown;
@@ -87,7 +90,9 @@
                 _ClassTemplate._lpwcx = new WNDCLASSEX();
                 _ClassTemplate._lpwcx.cbSize = Marshal.SizeOf(typeof(WNDCLASSEX));
                 _ClassTemplate._lpwcx.hInstance = User32.GetModuleHandle(null);
-                _ClassTemplate.hIcon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+                _ClassTemplate.hIcon = hIcon != null
+                    ? hIcon
+                    : Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
                 _ClassTemplate._lpwcx.style = (int)(ClassStyles.HorizontalRedraw | ClassStyles.VerticalRedraw);
                 _ClassTemplate._lpwcx.cbClsExtra = 0;
                 _ClassTemplate._lpwcx.cbWndExtra = 0;
@@ -115,8 +120,8 @@
                     WindowStyles.WS_MAXIMIZEBOX,
                 160,
                 230,
-                720,
-                (int)(720 * (3f / 5f)),
+                sz?.Width ?? 720,
+                sz?.Height ?? (int)(720 * (3f / 5f)),
                 IntPtr.Zero,
                 IntPtr.Zero,
                 _ClassTemplate._lpwcx.hInstance,
@@ -158,58 +163,61 @@
                 Interlocked.Exchange(ref hSurface2D, new Surface2D(new Surface2D.Quantum(Membitrect.Right - Membitrect.Left),
                     new Surface2D.Quantum(Membitrect.Bottom - Membitrect.Top), _bgColor))?.Dispose();
             }
-            IntPtr Memhdc = User32.CreateCompatibleDC(hdc);
-            IntPtr Membitmap = User32.CreateCompatibleBitmap(hdc,
+            IntPtr hMemDC = User32.CreateCompatibleDC(hdc);
+            IntPtr hMemBitmap = User32.CreateCompatibleBitmap(hdc,
                 Membitrect.Right - Membitrect.Left,
                 Membitrect.Bottom - Membitrect.Top);
-            User32.SelectObject(Memhdc, Membitmap);
+            User32.SelectObject(hMemDC, hMemBitmap);
             // if (_ClassTemplate._lpwcx.hbrBackground != IntPtr.Zero) {
             //     User32.FillRect(Memhdc, ref Membitrect,
             //             _ClassTemplate._lpwcx.hbrBackground);
             // }
-            Graphics _g = Graphics.FromHdc(Memhdc);
-            var bgBrush = new SolidBrush(_bgColor);
-            _g.FillRectangle(bgBrush, 0, 0, Membitrect.Right - Membitrect.Left, Membitrect.Bottom - Membitrect.Top);
-            hSurface2D.BeginPaint();
+            Graphics _g = Graphics.FromHdc(hMemDC);
+            // var bgBrush = new SolidBrush(_bgColor);
+            // _g.FillRectangle(bgBrush, 0, 0, Membitrect.Right - Membitrect.Left, Membitrect.Bottom - Membitrect.Top);
+            //hSurface2D.BeginPaint();
             var phase = GetLocalTime();
             try {
-                hSurface2D.Fill(_bgColor);
-                onDrawFrame?.Invoke(hSurface2D,
+                //    hSurface2D.Fill(_bgColor);
+                var bgBrush = new SolidBrush(_bgColor);
+                _g.FillRectangle(bgBrush, 0, 0, Membitrect.Right - Membitrect.Left, Membitrect.Bottom - Membitrect.Top);
+                bgBrush.Dispose();
+                onDrawFrame?.Invoke(_g,
+                    new RectangleF(0, 0, Membitrect.Right - Membitrect.Left, Membitrect.Bottom - Membitrect.Top),
                     phase, userState != null ?
                         userState.Invoke() : null);
             } catch {
             }
-            hSurface2D.EndPaint();
+            //hSurface2D.EndPaint();
 
-            if (hSurface2D.hBitMap != null) {
-                _g.DrawImage(hSurface2D.hBitMap,
-                    0, 0);
-            }
-            if (hSurface2D.TopLeft != null) {
-                _g.DrawString(
-                    $"{hSurface2D.TopLeft}", Font, Brushes.LimeGreen, 6, 8);
-            }
-            if (hSurface2D.TopRight != null) {
-                var sz = _g.MeasureString($"{hSurface2D.TopRight}", Font);
-                _g.DrawString(
-                    $"{hSurface2D.TopRight}", Font, Brushes.LimeGreen, Membitrect.Right - 6 - sz.Width,
-                     8);
-            }
-            if (hSurface2D.BottomLeft != null) {
-                _g.DrawString(
-                    $"{hSurface2D.BottomLeft}", Font, Brushes.LimeGreen, 6,
-                     Membitrect.Top
-                         + (Membitrect.Bottom - Membitrect.Top) - 26 - 8);
-            }
-            if (hSurface2D.BottomRight != null) {
-                var sz = _g.MeasureString($"{hSurface2D.BottomRight}", Font);
-                _g.DrawString(
-                    $"{hSurface2D.BottomRight}", Font, Brushes.LimeGreen, Membitrect.Right - 6 - sz.Width,
-                     Membitrect.Top
-                         + (Membitrect.Bottom - Membitrect.Top) - 26 - 8);
-            }
+            // if (hSurface2D.hBitMap != null) {
+            //     _g.DrawImage(hSurface2D.hBitMap,
+            //         0, 0);
+            // }
+            // if (hSurface2D.TopLeft != null) {
+            //     _g.DrawString(
+            //         $"{hSurface2D.TopLeft}", Font, Brushes.LimeGreen, 6, 8);
+            // }
+            // if (hSurface2D.TopRight != null) {
+            //     var sz = _g.MeasureString($"{hSurface2D.TopRight}", Font);
+            //     _g.DrawString(
+            //         $"{hSurface2D.TopRight}", Font, Brushes.LimeGreen, Membitrect.Right - 6 - sz.Width,
+            //          8);
+            // }
+            // if (hSurface2D.BottomLeft != null) {
+            //     _g.DrawString(
+            //         $"{hSurface2D.BottomLeft}", Font, Brushes.LimeGreen, 6,
+            //          Membitrect.Top
+            //              + (Membitrect.Bottom - Membitrect.Top) - 26 - 8);
+            // }
+            // if (hSurface2D.BottomRight != null) {
+            //     var sz = _g.MeasureString($"{hSurface2D.BottomRight}", Font);
+            //     _g.DrawString(
+            //         $"{hSurface2D.BottomRight}", Font, Brushes.LimeGreen, Membitrect.Right - 6 - sz.Width,
+            //          Membitrect.Top
+            //              + (Membitrect.Bottom - Membitrect.Top) - 26 - 8);
+            // }
 
-            _g.DrawPath(Pens.Aqua, new System.Drawing.Drawing2D.GraphicsPath());
 
             /*
             if (hSurface2D.Title == null) {
@@ -223,12 +231,12 @@
             _g.Dispose();
             int margin = 0;
             User32.StretchBlt(hdc, margin, margin, lprct.Right - lprct.Left - margin - margin,
-                lprct.Bottom - lprct.Top - margin - margin, Memhdc, 0, 0,
+                lprct.Bottom - lprct.Top - margin - margin, hMemDC, 0, 0,
                 Membitrect.Right - Membitrect.Left - margin - margin,
                 Membitrect.Bottom - Membitrect.Top - margin - margin,
                 User32.TernaryRasterOperations.SRCCOPY);
-            User32.DeleteObject(Membitmap);
-            User32.DeleteDC(Memhdc);
+            User32.DeleteObject(hMemBitmap);
+            User32.DeleteDC(hMemDC);
             User32.EndPaint(hWnd, ref ps);
         }
 

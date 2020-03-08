@@ -2,7 +2,7 @@
 using System.Diagnostics;
 
 namespace System.Collections {
-    public class Set<T> : Scalar, IEnumerable<T> where T : Scalar {
+    public class Set<T> : Dot, IEnumerable<T> where T : Dot {
         protected Func<string, int, T> _factory;
         public Set(Func<string, int, T> factory) {
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
@@ -41,7 +41,7 @@ namespace System.Collections {
             int index = LinearProbe(
                     _hash,
                     id,
-                    Scalar.ComputeHashCode(id),
+                    ComputeHashCode(id),
                     out T item,
                     out int depth);
             if (index >= 0) {
@@ -57,7 +57,7 @@ namespace System.Collections {
                 int index = LinearProbe(
                         _hash,
                         id,
-                        Scalar.ComputeHashCode(id),
+                        ComputeHashCode(id),
                         out T item,
                         out int depth);
                 if (index >= 0) {
@@ -71,7 +71,7 @@ namespace System.Collections {
             if (_hash == null) {
                 _hash = new T[7];
             }
-            int index, depth, hashCode = Scalar.ComputeHashCode(id);
+            int index, depth, hashCode = ComputeHashCode(id);
             for (; ; ) {
                 index = LinearProbe(
                     _hash,
@@ -192,18 +192,18 @@ namespace System.Collections {
         }
     }
 
-    public class Set : Set<Scalar>,
+    public class Set : Set<Dot>,
             IEnumerable<string> {
         public IEnumerable<string> ToArray { get; internal set; }
 
         public Set()
-            : base((id, hashCode) => new Scalar(id, hashCode)) { }
+            : base((id, hashCode) => new Dot(id, hashCode)) { }
         public Set(string id, int hashCode)
-            : base((_id, _hashCode) => new Scalar(_id, _hashCode), id, hashCode) { }
+            : base((_id, _hashCode) => new Dot(_id, _hashCode), id, hashCode) { }
         public Set(int length)
-            : base((id, hashCode) => new Scalar(id, hashCode),length) {
+            : base((id, hashCode) => new Dot(id, hashCode),length) {
             if (length > 0) {
-                _hash = new Scalar[length];
+                _hash = new Dot[length];
             }
         }
         public Set(params string[] ids)

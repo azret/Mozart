@@ -25,14 +25,14 @@ namespace System.Audio {
         IEnumerator IEnumerable.GetEnumerator() {
             return _keys.GetEnumerator();
         }
-        public static IEnumerable<float[]> Synthesize(IEnumerable<TimeSpan> M, int Hz, Func<int, int, double> E) {
+        public static IEnumerable<float[]> Synthesize(IEnumerable<TimeSpan> M, float Hz, Func<int, int, double> E) {
             foreach (var f in M) {
                 if (f.Seconds > 0) {
                     yield return Synthesize(f.Seconds, f, Hz, E);
                 }
             }
         }
-        public static float[] Synthesize(float seconds, IEnumerable<Frequency> F, int Hz, Func<int, int, double> E) {
+        public static float[] Synthesize(float seconds, IEnumerable<Frequency> F, float Hz, Func<int, int, double> E) {
             var samples = (int)Math.Ceiling(seconds * (double)Hz);
             float[] X = new float[samples];
             for (int k = 0; k < X.Length; k++) {

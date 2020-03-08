@@ -71,11 +71,11 @@ namespace System {
         }
     }
     public partial struct Complex {
-        public static Complex[] FFT(float[] x) {
+        public static Complex[] FFT(float[] X) {
             int k;
-            Complex[] fft = new Complex[x.Length];
-            for (k = 0; k < x.Length; k++) {
-                fft[k].Re = x[k];
+            Complex[] fft = new Complex[X.Length];
+            for (k = 0; k < X.Length; k++) {
+                fft[k].Re = X[k];
             }
             FastFourierTransform(fft, +1);
             return fft;

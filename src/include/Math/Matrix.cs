@@ -3,7 +3,7 @@ using System.Threading;
 
 namespace System.Collections {
     public partial class Matrix<T> : IEnumerable<T>
-            where T : Scalar {
+            where T : Dot {
         protected Func<string, int, T> _factory;
         public Matrix(Func<string, int, T> factory, int length) {
             if (length > 31048576 || length < 0) {
@@ -55,7 +55,7 @@ namespace System.Collections {
         }
         public T this[string id, int hashCode] {
             get {
-                int index = Scalar.LinearProbe(_data, id, hashCode,
+                int index = Dot.LinearProbe(_data, id, hashCode,
                     out T row, out int depth);
                 if (index < 0) {
                     return null;
@@ -66,7 +66,7 @@ namespace System.Collections {
         public T this[string id] {
             get {
                 if (id == null || id.Length == 0) return /*!*/ null;
-                int index = Scalar.LinearProbe(_data, id, Scalar.ComputeHashCode(id),
+                int index = Dot.LinearProbe(_data, id, Dot.ComputeHashCode(id),
                     out T row, out int depth);
                 if (index < 0) {
                     return /*!*/ null;
@@ -76,10 +76,10 @@ namespace System.Collections {
         }
         protected int _depth;
         public int Depth { get => _depth; }
-        public T Push(string key) { return Push(key, Scalar.ComputeHashCode(key)); }
+        public T Push(string key) { return Push(key, Dot.ComputeHashCode(key)); }
         public T Push(string key, int hashCode) {
             for (; ;) {
-                int index = Scalar.LinearProbe(_data, key, hashCode,
+                int index = Dot.LinearProbe(_data, key, hashCode,
                     out T row, out int depth);
                 if (index < 0) {
                     throw new OutOfMemoryException();

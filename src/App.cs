@@ -13,8 +13,6 @@ unsafe partial class App {
         set => Environment.CurrentDirectory = value;
     }
 
-    readonly ISource Stream = new Source();
-
     static void Main() {
         runCli(new App());
     }
@@ -71,26 +69,16 @@ unsafe partial class App {
             App app,
             string cliString,
             Func<bool> IsTerminated) {
-        if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
+        if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
+            return ShowMic(
+                app,
+                cliString,
+                IsTerminated);
+        } else if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
             return ShowFourierTransform(
                 app,
                 cliString,
                 IsTerminated);
-            // } else if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
-            //     return OpenMicSignalWindow(
-            //         app,
-            //         cliString,
-            //         IsTerminated);
-            // } else if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
-            //     return OpenMicFastFourierTransformWindow(
-            //         app,
-            //         cliString,
-            //         IsTerminated);
-            // } else if (cliString.StartsWith("--md", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("md", StringComparison.OrdinalIgnoreCase)) {
-            //     return OpenMicMidiWindow(
-            //         app,
-            //         cliString,
-            //         IsTerminated);
         } else if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
             var dir = cliString.Remove(0, "cd".Length).Trim();
             if (Directory.Exists(dir)) {
@@ -108,16 +96,17 @@ unsafe partial class App {
     }
 
     Thread StartWinUI<T>(Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
-        Color bgColor, Plot2D<T>.KeyDown onKeyDown = null)
+        Color bgColor, Plot2D<T>.KeyDown onKeyDown = null, Action onDone = null, Icon hIcon = null,
+        Size? size = null)
         where T : class {
-        Thread t = new Thread((getFrame) => {
+        Thread t = new Thread(() => {
             IntPtr handl = IntPtr.Zero;
             Plot2D<T> hWnd = null;
             try {
                 hWnd = new Plot2D<T>($"{title}",
                     onDrawFrame, onKeyDown,
                     TimeSpan.FromMilliseconds(1000),
-                    onGetFrame, bgColor);
+                    onGetFrame, bgColor, hIcon, size);
                 hWnd.Show();
                 AddHandle(handl = hWnd.hWnd);
                 while (User32.GetMessage(out MSG msg, hWnd.hWnd, 0, 0) != 0) {
@@ -136,9 +125,10 @@ unsafe partial class App {
                         WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
                         WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
                         WinMM.PLAYSOUNDFLAGS.SND_PURGE);
+                onDone?.Invoke();
             }
         });
-        t.Start(onGetFrame);
+        t.Start();
         return t;
     }
 
@@ -150,11 +140,7 @@ unsafe partial class App {
                 WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
                 WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
                 WinMM.PLAYSOUNDFLAGS.SND_PURGE);
-        if (hMic32 != null) {
-            Mute();
-        } else {
-            UnMute();
-        }
+        Toggle();
         return 0;
     }
 

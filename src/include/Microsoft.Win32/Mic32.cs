@@ -3,7 +3,7 @@
     using System.Runtime.InteropServices;
     using Microsoft.Win32;
 
-    public sealed class Mic32 : IDisposable {
+    public sealed partial class Mic32 : IDisposable {
         private object _dataLock = new object(),
             _disposeLock = new object();
 

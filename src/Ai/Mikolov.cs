@@ -6,6 +6,18 @@ using System.Threading;
 
 namespace System.Ai {
     public static partial class CBOW {
+        public static double PowScale(double score) {
+            const double POW = 0.7351;
+            const int Xmax = 100;
+            if (score <= 1) {
+                return 1;
+            } else if (score >= Xmax) {
+                return System.Math.Pow(Xmax, POW);
+            } else {
+                return System.Math.Pow(score, POW);
+            }
+        }
+
         public const int VERBOSITY = 13;
         public static class Defaults {
             public const double lr = 0.371;
@@ -20,7 +32,7 @@ namespace System.Ai {
         public static int DIMS = Defaults.DIMS,
             THRESHOLD = Defaults.THRESHOLD;
 
-        public static Vector[] Predict(IEnumerable<Vector> Model, double[] Re, int max) {
+        public static Vector[] Predict(IEnumerable<Vector> Model, float[] Re, int max) {
             Vector[] best = new Vector[max];
             foreach (Vector c in Model) {
                 int b = 0;
@@ -33,12 +45,12 @@ namespace System.Ai {
                         b = j;
                     }
                 }
-                double dot = 0,
+                float dot = 0,
                     score;
                 for (int j = 0; j < Re.Length; j++) {
                     dot += c.Axis[j].Im * Re[j];
                 }
-                score = Sigmoid.f(dot);
+                score = (float)Sigmoid.f(dot);
                 if (best[b] == null || best[b].Score.Re < score) {
                     best[b] = new Vector(c.Id, c.HashCode) {
                         Score = new Complex() { Re = score }
@@ -66,7 +78,7 @@ namespace System.Ai {
             double norm = 0,
                     cc = 0;
             foreach (Vector g in M) {
-                norm += Envelopes.PowScale(g.Score.Re);
+                norm += PowScale(g.Score.Re);
                 cc++;
             }
             if (norm > 0) {
@@ -74,7 +86,7 @@ namespace System.Ai {
             }
             Vector[] negDistr = new Vector[0]; int count = 0;
             foreach (Vector g in M) {
-                double samples = Envelopes.PowScale(g.Score.Re) * size * norm;
+                double samples = PowScale(g.Score.Re) * size * norm;
                 for (int j = 0; j < samples; j++) {
                     if (count >= negDistr.Length) {
                         Array.Resize(ref negDistr, (int)((negDistr.Length + 7) * 1.75));
@@ -90,7 +102,7 @@ namespace System.Ai {
             return negDistr;
         }
 
-        static Vector findNegVec(Vector[] negDistr, Vector vec) {
+        static Vector PickFromNegDistr(Vector[] negDistr, Vector vec) {
             if (negDistr == null) {
                 return null;
             }
@@ -164,7 +176,7 @@ namespace System.Ai {
                     boundry = global::Random.Next(NEGATIVES + 1);
                 }
                 for (var c = 0; c < boundry; c++) {
-                    var neg = findNegVec(negDistr, wo);
+                    var neg = PickFromNegDistr(negDistr, wo);
                     if (neg != null
                             && !wo.Id.Equals(neg.Id)
                             && !bow.Has(neg.Id)) {
@@ -197,11 +209,11 @@ namespace System.Ai {
                       cc = 0,
                    score = 0,
                       err = 0;
-            double[] hidden = computeInputVector(Wi);
+            double[] input = computeInputVector(Wi);
             double[] grads
-                = new double[hidden.Length];
+                = new double[input.Length];
             score = binaryLogistic(
-                hidden,
+                input,
                 grads,
                 wo.Axis,
                 label ? 1.0 : 0.0,
@@ -220,19 +232,23 @@ namespace System.Ai {
             _LOG_(Wi, wo, label, gen,
                 ref verbOut, score, err);
             if (cc > 0) {
+                loss = loss / cc;
                 for (var j = 0; j < grads.Length; j++) {
                     grads[j] /= (double)cc;
                 }
-                foreach (Vector wi in Wi) {
-                    if (Wi == null) continue;
-                    Debug.Assert(wi.Axis.Length == grads.Length);
-                    for (var j = 0; j < wi.Axis.Length; j++) {
-                        wi.Axis[j].Re += grads[j];
-                    }
-                }
-                loss = loss / cc;
+                updateInputVector(Wi, grads);
             }
             return loss;
+        }
+
+        static void updateInputVector(Vector[] Wi, double[] grads) {
+            foreach (Vector wi in Wi) {
+                if (Wi == null) continue;
+                Debug.Assert(wi.Axis.Length == grads.Length);
+                for (var j = 0; j < wi.Axis.Length; j++) {
+                    wi.Axis[j].Re += (float)grads[j];
+                }
+            }
         }
 
         static double[] computeInputVector(IEnumerable<Vector> Wi) {
@@ -280,7 +296,7 @@ namespace System.Ai {
                 }
             }
             for (int j = 0; j < len; j++) {
-                wo[j].Im += wi[j] * diff;
+                wo[j].Im += (float)(wi[j] * diff);
             }
             return y;
         }

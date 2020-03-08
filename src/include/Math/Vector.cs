@@ -1,8 +1,8 @@
 ﻿namespace System.Collections {
-    public class Vector : Scalar {
+    public class Vector : Dot {
         public Complex[] Axis;
-        public Vector(string id, double[] re, double[] im)
-            : base(id, Scalar.ComputeHashCode(id)) {
+        public Vector(string id, float[] re, float[] im)
+            : base(id, ComputeHashCode(id)) {
             int len = 0;
             if (re != null) {
                 len = re.Length;
@@ -28,7 +28,7 @@
         }
         public int Length { get => Axis.Length; }
         public Vector(string id)
-            : base(id, Scalar.ComputeHashCode(id)) {
+            : base(id, ComputeHashCode(id)) {
         }
         public Vector(string id, int hashCode)
             : base(id, hashCode) {

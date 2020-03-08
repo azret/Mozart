@@ -47,17 +47,29 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Cli\Mic.cs" />
-    <Compile Include="Process\ISource.cs" />
+    <Compile Include="Ai\Mikolov.cs" />
+    <Compile Include="include\Math\Dot.cs" />
+    <Compile Include="include\Math\Matrix.cs" />
+    <Compile Include="include\Math\Set.cs" />
+    <Compile Include="include\Math\Vector.cs" />
+    <Compile Include="include\System.Text\Orthography.cs" />
+    <Compile Include="include\System.Text\Text.cs" />
     <Compile Include="include\Wav\TimeSpan.cs" />
     <Compile Include="Mic\Mic.cs" />
-    <Compile Include="Viz\Fourier.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Sound\IStream.cs" />
+    <Compile Include="Sound\Stream.cs" />
+    <Compile Include="Viz\Curves.cs" />
     <Compile Include="App.cs" />
     <Compile Include="include\Wav\dB.cs" />
     <Compile Include="include\Wav\Scale.cs" />
-    <Compile Include="Process\Process.cs" />
+    <Compile Include="Sound\Math.cs" />
     <Compile Include="include\Wav\Frequency.cs" />
-    <Compile Include="Process\Ranges.cs" />
+    <Compile Include="Sound\Ranges.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
@@ -71,9 +83,7 @@
     <Compile Include="include\Math\Sigmoid.cs" />
     <Compile Include="include\Math\SigQ.cs" />
     <Compile Include="include\Math\Tanh.cs" />
-    <Compile Include="Process\Print.cs" />
-    <Compile Include="Process\Source.cs" />
-    <Compile Include="Viz\Mic.cs" />
+    <Compile Include="Sound\Print.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -86,6 +96,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App.ico" />
+    <None Include="Resources\Wave.ico" />
+    <None Include="Resources\Audio.ico" />
+    <None Include="Resources\Record.ico" />
+    <None Include="Resources\Mic.ico" />
     <None Include="data\Gallia.wav">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -93,6 +107,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

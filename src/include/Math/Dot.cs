@@ -1,5 +1,5 @@
 ﻿namespace System {
-    public partial class Scalar : IEquatable<Scalar>, IComparable<Scalar> {
+    public partial class Dot : IEquatable<Dot>, IComparable<Dot> {
         public static int ComputeHashCode(string id) {
             uint h = 2166136261;
             unchecked {
@@ -9,7 +9,7 @@
             }
         }
         public static int LinearProbe<T>(T[] hash, string id, int hashCode,
-            out T value, out int depth) where T : Scalar {
+            out T value, out int depth) where T : Dot {
             value = null; depth = 0;
             if (hash == null) {
                 return -1;
@@ -29,10 +29,10 @@
             }
             return i;
         }
-        public Scalar() {
+        public Dot() {
             HashCode = base.GetHashCode();
         }
-        public Scalar(string id, int hashCode) {
+        public Dot(string id, int hashCode) {
             if (id == null || id.Length == 0) {
                 throw new ArgumentNullException(nameof(id));
             }
@@ -44,11 +44,11 @@
         }
         public readonly string Id;
         public Complex Score;
-        public double Add(double re = 1.0) {
+        public double Add(float re = 1.0f) {
             Score.Re = Score.Re + re;
             return Score.Re;
         }
-        public double Multi(double re = 1.0) {
+        public double Multi(float re = 1.0f) {
             Score.Re = Score.Re * re;
             return Score.Re;
         }
@@ -59,15 +59,15 @@
             if (other == null) { return this == null; }
             if (ReferenceEquals(other, this)) { return true; }
             if (other is string s) { return string.Equals(Id, s); }
-            if (other is Scalar g) { return Equals(g); }
+            if (other is Dot g) { return Equals(g); }
             return false;
         }
-        public bool Equals(Scalar other) {
+        public bool Equals(Dot other) {
             if (other == null) { return this == null; }
             if (ReferenceEquals(other, this)) { return true; }
             return string.Equals(Id, other.Id);
         }
-        public static int CompareTo(Scalar a, Scalar b) {
+        public static int CompareTo(Dot a, Dot b) {
             if (a == null) {
                 return b == null
                     ? 0
@@ -80,7 +80,7 @@
                 return a.Score.Re.CompareTo(b.Score.Re);
             }
         }
-        public int CompareTo(Scalar other) {
+        public int CompareTo(Dot other) {
             return CompareTo(this, other);
         }
     }

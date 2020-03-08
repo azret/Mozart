@@ -1,6 +1,6 @@
 ﻿namespace System.Audio {
-    public struct Frequency {
-        public readonly float Freq,
+    public class Frequency {
+        public float Freq,
             Vol;
         public Frequency(float freq, float vol) {
             Freq = freq;
