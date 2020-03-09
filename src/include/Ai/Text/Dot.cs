@@ -9,8 +9,8 @@
             }
         }
         public static int LinearProbe<T>(T[] hash, string id, int hashCode,
-            out T value, out int depth) where T : Dot {
-            value = null; depth = 0;
+            out T dot, out int depth) where T : Dot {
+            dot = null; depth = 0;
             if (hash == null) {
                 return -1;
             }
@@ -18,14 +18,14 @@
             int i = hashCode % cc,
                          start = i;
             depth = 0;
-            value = hash[i];
-            while (value != null && (!(value.GetHashCode() == hashCode && value.Equals(id)))) {
+            dot = hash[i];
+            while (dot != null && (!(dot.GetHashCode() == hashCode && dot.Equals(id)))) {
                 i = (i + 1) % cc;
                 depth++;
                 if (i == start) {
                     return -1;
                 }
-                value = hash[i];
+                dot = hash[i];
             }
             return i;
         }
@@ -43,18 +43,35 @@
             HashCode = hashCode;
         }
         public readonly string Id;
-        public Complex z;
+        public Complex _z;
+        public float Re {
+            get {
+                return _z.Re;
+            }
+            set {
+                _z.Re = value;
+            }
+        }
+        public float Im {
+            get {
+                return _z.Im;
+            }
+            set {
+                _z.Im = value;
+            }
+        }
         public double Add(float re = 1.0f) {
-            z.Re = z.Re + re;
-            return z.Re;
+            _z.Re = _z.Re + re;
+            return _z.Re;
         }
         public double Multi(float re = 1.0f) {
-            z.Re = z.Re * re;
-            return z.Re;
+            _z.Re = _z.Re * re;
+            return _z.Re;
         }
         public readonly int HashCode;
         public override int GetHashCode() => HashCode;
         public override string ToString() { return Id; }
+        public string ToString(bool z) { return z ? _z.ToString() : Id; }
         public override bool Equals(object other) {
             if (other == null) { return this == null; }
             if (ReferenceEquals(other, this)) { return true; }
@@ -77,7 +94,7 @@
                     ? 0
                     : 1;
             } else {
-                return a.z.Re.CompareTo(b.z.Re);
+                return a.Re.CompareTo(b.Re);
             }
         }
         public int CompareTo(Dot other) {

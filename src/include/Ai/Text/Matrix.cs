@@ -125,7 +125,7 @@ namespace System.Collections {
             T[] sort = Sequence(M);
             Array.Sort(
                 sort,
-                (a, b) => -a.z.Re.CompareTo(b.z.Re));
+                (a, b) => -a.Re.CompareTo(b.Re));
             if (take < sort.Length) {
                 Array.Resize(ref sort, take);
             }
@@ -140,12 +140,12 @@ namespace System.Collections {
         }
     }
 
-    public partial class Matrix : Matrix<Vector> {
-        public Matrix(int length) 
-            : base((id, hashCode) => new Vector(id, hashCode), length) {
-        }
-        public Matrix(Vector[] data, int count) 
-            : base((id, hashCode) => new Vector(id, hashCode), data, count) {
-        }
-    }
+    // public partial class Matrix : Matrix<Vector> {
+    //     public Matrix(int length) 
+    //         : base((id, hashCode) => new Vector(id, hashCode), length) {
+    //     }
+    //     public Matrix(Vector[] data, int count) 
+    //         : base((id, hashCode) => new Vector(id, hashCode), data, count) {
+    //     }
+    // }
 }

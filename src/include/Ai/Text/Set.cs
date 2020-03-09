@@ -152,7 +152,7 @@ namespace System.Collections {
                 Array.Resize(ref sort,
                     cc);
                 Array.Sort(sort, (a, b) => {
-                    return -(a.z.Re.CompareTo(b.z.Re));
+                    return -(a.Re.CompareTo(b.Re));
                 });
                 Debug.Assert(Count == cc);
                 return sort;
@@ -166,7 +166,7 @@ namespace System.Collections {
             if (_hash != null) {
                 for (int i = 0; i < _hash.Length; i++) {
                     if (_hash[i] != null) {
-                        if (max == null || _hash[i].z.Re > max.z.Re) {
+                        if (max == null || _hash[i].Re > max.Re) {
                             max = _hash[i];
                         }
                         cc++;

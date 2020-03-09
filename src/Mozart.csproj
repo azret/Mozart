@@ -47,11 +47,13 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Ai\Mikolov.cs" />
-    <Compile Include="include\Math\Dot.cs" />
-    <Compile Include="include\Math\Matrix.cs" />
-    <Compile Include="include\Math\Set.cs" />
-    <Compile Include="include\Math\Vector.cs" />
+    <Compile Include="include\Ai\Fit.cs" />
+    <Compile Include="include\Ai\Text\Mikolov.cs" />
+    <Compile Include="include\Ai\Text\Dot.cs" />
+    <Compile Include="include\Ai\Text\Matrix.cs" />
+    <Compile Include="include\Ai\Text\Set.cs" />
+    <Compile Include="include\Ai\Text\Vector.cs" />
+    <Compile Include="include\Ai\Text\Word.cs" />
     <Compile Include="include\System.Text\Orthography.cs" />
     <Compile Include="include\System.Text\Text.cs" />
     <Compile Include="include\Wav\TimeSpan.cs" />
@@ -75,14 +77,14 @@
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
     <Compile Include="include\Microsoft.Win32\Win32.cs" />
     <Compile Include="include\Wav\Wav.cs" />
-    <Compile Include="include\Math\Complex.cs" />
-    <Compile Include="include\Math\IFunc.cs" />
-    <Compile Include="include\Math\Random.cs" />
+    <Compile Include="include\Ai\Complex.cs" />
+    <Compile Include="include\Ai\IFunc.cs" />
+    <Compile Include="include\Ai\Random.cs" />
     <Compile Include="include\Math\Shapes.cs" />
-    <Compile Include="include\Math\SigF.cs" />
-    <Compile Include="include\Math\Sigmoid.cs" />
-    <Compile Include="include\Math\SigQ.cs" />
-    <Compile Include="include\Math\Tanh.cs" />
+    <Compile Include="include\Ai\SigF.cs" />
+    <Compile Include="include\Ai\Sigmoid.cs" />
+    <Compile Include="include\Ai\SigQ.cs" />
+    <Compile Include="include\Ai\Tanh.cs" />
     <Compile Include="Sound\Print.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -114,5 +116,6 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
