@@ -71,6 +71,10 @@ unsafe partial class App {
             Func<bool> IsTerminated) {
         if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase) 
                     || cliString.StartsWith("cbow", StringComparison.OrdinalIgnoreCase)) {
+            return System.Ai.CBOW.Train(
+                app.CurrentDirectory,
+                "*.*",
+                IsTerminated);
         } else if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
             return ShowMic(
                 app,
@@ -89,10 +93,12 @@ unsafe partial class App {
         } else if (cliString.StartsWith("cls", StringComparison.OrdinalIgnoreCase)) {
             Console.Clear();
         } else {
-            // return ScoreWav(
-            //     app,
-            //     cliString,
-            //     IsTerminated);
+            string outputFileName = @"D:\Mozart\src\App.cbow";
+
+            var Model = System.Ai.CBOW.LoadFromFile(outputFileName, System.Ai.CBOW.SIZE,
+                    out string fmt, out int dims);
+
+            System.Ai.CBOW.RunFullCosineSort(new CSharp(), Model, cliString, 32);
         }
         return false;
     }

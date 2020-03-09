@@ -1,6 +1,6 @@
 ﻿namespace System.Collections {
     public class Vector : Dot {
-        public Complex[] Axis;
+        public Complex[] Z;
         public Vector(string id, float[] re, float[] im)
             : base(id, ComputeHashCode(id)) {
             int len = 0;
@@ -16,17 +16,17 @@
                     len = im.Length;
                 }
             }
-            Axis = new Complex[len];
+            Z = new Complex[len];
             for (int i = 0; i < len; i++) {
                 if (re != null) {
-                    Axis[i].Re = re[i];
+                    Z[i].Re = re[i];
                 }
                 if (im != null) {
-                    Axis[i].Im = im[i];
+                    Z[i].Im = im[i];
                 }
             }
         }
-        public int Length { get => Axis.Length; }
+        public int Length { get => Z.Length; }
         public Vector(string id)
             : base(id, ComputeHashCode(id)) {
         }
@@ -34,13 +34,13 @@
             : base(id, hashCode) {
         }
         public void Alloc(int len) {
-            if (Axis != null) {
+            if (Z != null) {
                 throw new InvalidOperationException();
             }
             if (len < 0 || len > 1024) {
                 throw new ArgumentOutOfRangeException(nameof(len));
             }
-            Axis = new Complex[len];
+            Z = new Complex[len];
         }
     }
 }

@@ -9,24 +9,118 @@ using System.Threading;
 
 namespace System.Ai {
     public static partial class CBOW {
-        const int SIZE = 1048576,
+        public const int SIZE = 1048576,
             GENS = (int)1e6,
                 SHUFFLE = (int)1e7;
 
+        public static Vector[] RunFullCosineSort(IOrthography lex, Matrix Model, string Q, int max) {
+            if (Model == null || string.IsNullOrWhiteSpace(Q)) {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Model not loaded.\r\n");
+                Console.ResetColor();
+                Console.WriteLine("See '--load' command for more info...\r\n");
+                return null;
+            }
+            float[] Re = new float[CBOW.DIMS];
+            float norm = 0;
+            var sign = +1;
+            foreach (var tok in PlainText.ForEach(Q, 0, Q.Length, 0)) {
+                string wi = lex.GetKey(tok.TextFragment.Substring(tok.StartIndex, tok.Length));
+                if (wi == "+") {
+                    sign = +1;
+                } else if (wi == "-") {
+                    sign = -1;
+                } else {
+                    var vec = Model[wi];
+                    if (vec != null) {
+                        Debug.Assert(vec.Z.Length == Re.Length);
+                        for (var j = 0; j < Re.Length; j++) {
+                            Re[j] += sign * vec.Z[j].Re;
+                        }
+                        norm++;
+                    } else {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($"'{wi}' not found.");
+                        Console.ResetColor();
+                    }
+                }
+            }
+            if (norm > 0) {
+                for (var j = 0; j < Re.Length; j++) {
+                    Re[j] /= (float)norm;
+                }
+            }
+            Vector[] output = CBOW.Predict(Model, Re, max);
+            Array.Sort(output,
+                (a, b) => Dot.CompareTo(a, b));
+            Console.WriteLine();
+            Console.WriteLine(" [" + string.Join(",", Re.Select(re => Math.Round(re, 4)).Take(7)) + "...]");
+            Console.WriteLine();
+            int len = 0;
+            for (int i = output.Length - 1; i >= 0; i--) {
+                Vector n = output[i];
+                if (n != null) {
+                    string str = n.Id;
+                    var it = Model[n.Id];
+                    if (it != null) {
+                        // if (it.Count > 0) {
+                        //     var best = it.ArgMax();
+                        //     if (best != null) {
+                        //         str = best.Id;
+                        //     }
+                        // }
+                    }
+                    if (len + str.Length > 37  /* break like if does not fit */) {
+                        Console.WriteLine(
+                            output.Length <= 31
+                                ? $" {str} : {n.z}"
+                                : $" {str}");
+                        len = 0;
+                    } else {
+                        Console.Write(
+                            output.Length <= 31
+                                ? $" {str} : {n.z}"
+                                : $" {str}");
+                        len += str.Length;
+                    }
+                }
+            }
+            Console.WriteLine();
+            return output;
+        }
+
         public static bool Train(string currentDirectory, string searchPattern,
             Func<bool> IsTerminated) {
-            var Model = new Matrix(SIZE);
-            // TrainMikolovModel(MakeFiles(new string[] { currentDirectory },
-            //     searchPattern, SearchOption.AllDirectories),
-            //     new Orthography(),
-            //     Model,
-            //     (loss) => { },
-            //     IsTerminated);
-            // Model.SaveToFile(
-            //     Matrix.Sort(Model),
-            //     "CBOW",
-            //     CBOW.DIMS,
-            //     session.OutputFileName);
+
+            currentDirectory = @"D:\Mozart\src\";
+
+            var lex = new CSharp();
+
+            string outputFileName = @"D:\Mozart\src\App.cbow";
+
+            Matrix Model = null;
+
+            if (File.Exists(outputFileName)) {
+                Model = LoadFromFile(outputFileName,
+                    SIZE, out string fmt, out int dims);
+            } else {
+                Model = BuildFromPlainText(currentDirectory,
+                    "*.cs", lex, outputFileName);
+            }
+
+            TrainMikolovModel(MakeFileList(new string[] { currentDirectory },
+                "*.cs", SearchOption.AllDirectories),
+                lex,
+                Model,
+                (loss) => { },
+                IsTerminated);
+
+            CBOW.SaveToFile(
+                Matrix.Sort(Model),
+                "CBOW",
+                CBOW.DIMS,
+                outputFileName);
+
             return false;
         }
 
@@ -100,6 +194,169 @@ namespace System.Ai {
             Debug.Assert(numberOfThreads == 0);
         }
 
+        static Matrix BuildFromPlainText(string sourcePath, string searchPattern, IOrthography lex, string outputFileName) {
+            var Model = new Matrix(SIZE);
+
+            Set SourceFiles = null,
+                Black = null;
+
+            var ignoreFile = Path.ChangeExtension(outputFileName, ".ignore");
+
+            if (File.Exists(ignoreFile)) {
+                Black = MakeBlackList(13452, File.ReadAllText(ignoreFile), lex);
+            }
+
+            ParsePlainTextFiles(
+                Model,
+                SourceFiles = MakeFileList(new string[] { sourcePath },
+                    searchPattern, SearchOption.AllDirectories),
+                lex,
+                Black);
+
+            Matrix White = null;
+
+            var file = Path.ChangeExtension(outputFileName, ".allow");
+
+            if (File.Exists(file)) {
+                // White = MakeWhiteList(file, lex, SIZE);
+            }
+
+            if (White?.Count > 0 || CBOW.THRESHOLD > 0) {
+                LimitToThreshold(White, ref Model);
+            }
+
+            InitializeAndRandomize(Model);
+
+            return Model;
+        }
+
+        static void ParsePlainTextFiles(Matrix Model, Set files, IOrthography lex, Set skipList) {
+            bool IsStopWord(string w) {
+                return skipList != null
+                    ? (skipList[w] != null)
+                    : false;
+            }
+            foreach (string file in (IEnumerable<string>)files) {
+                Console.Write($"Reading {file}...\r\n");
+                string textFragment = File.ReadAllText(file);
+                foreach (var t
+                         in PlainText.ForEach(textFragment, 0, textFragment.Length, 0)) {
+                    if (t.Type == PlainTextTag.TAG) {
+                        var id = lex.GetKey(t.TextFragment.Substring(t.StartIndex, t.Length));
+                        if (!IsStopWord(id)) {
+                            var it = Model.Push(id);
+                            it.Add(1f / CBOW.THRESHOLD);
+                        }
+                    }
+                }
+            }
+        }
+
+        static Set MakeBlackList(int hashSize, string textFragment, IOrthography lex) {
+            var S = new Set();
+            if (textFragment != null) {
+                foreach (var t in PlainText.ForEach(textFragment, 0, textFragment.Length, 0)) {
+                    if (t.Type == PlainTextTag.TAG) {
+                        S.Push(lex.GetKey(t.TextFragment.Substring(t.StartIndex, t.Length)));
+                    }
+                }
+            }
+            return S;
+        }
+
+        static Matrix MakeWhiteList(string file, IOrthography lex, int hashSize) {
+            var M = new Matrix(hashSize);
+            Console.Write($"\r\nReading {file}...\r\n\r\n");
+            string textFragment = File.ReadAllText(file);
+            foreach (var t in PlainText.ForEach(textFragment, 0, textFragment.Length, 0)) {
+                if (t.Type == PlainTextTag.TAG) {
+                    M.Push(lex.GetKey(t.TextFragment.Substring(t.StartIndex, t.Length)));
+                }
+            }
+            return M;
+        }
+
+        static Set MakeFileList(string[] paths, string searchPattern, SearchOption searchOption) {
+            var M = new Set();
+            foreach (var path in paths) {
+                FileAttributes attr = FileAttributes.Offline;
+                try {
+                    attr = File.GetAttributes(path);
+                } catch (System.IO.FileNotFoundException) {
+                }
+                if ((attr & FileAttributes.Directory) == FileAttributes.Directory) {
+                    foreach (var s in Directory.EnumerateFiles(path, "*.*", searchOption)) {
+                        string file = Path.GetFullPath(s).ToLowerInvariant();
+                        if (M.Contains(file)) {
+                            continue;
+                        }
+                        if (searchPattern != null
+                                        && searchPattern != "*.*") {
+                            if (!searchPattern.Contains(Path.GetExtension(file))) {
+                                continue;
+                            }
+                        }
+                        attr = File.GetAttributes(file);
+                        if ((attr & FileAttributes.Hidden) != FileAttributes.Hidden) {
+                            M.Push(file);
+                        }
+                    }
+                } else {
+                    string file = Path.GetFullPath(path).ToLowerInvariant();
+                    attr = File.GetAttributes(file);
+                    if ((attr & FileAttributes.Hidden) != FileAttributes.Hidden) {
+                        M.Push(file);
+                    }
+                }
+            }
+            return M;
+        }
+
+        static void LimitToThreshold(Matrix White, ref Matrix Model) {
+            var Copy = new Matrix(SIZE);
+            foreach (var h in Model) {
+                if (h.z.Re < 1) {
+                    continue;
+                }
+                if (White != null) {
+                    if (White[h.Id] == null) {
+                        continue;
+                    }
+                }
+                Vector l = Copy.Push(
+                    h.Id,
+                    h.HashCode);
+                l.z = h.z;
+            }
+            Model = Copy;
+        }
+
+        static void InitializeAndRandomize(Matrix Model) {
+            double norm = 0;
+            foreach (var w in Model) {
+                w.z.Im = /* Just to break the mosaic pattern of the random number generator... */
+                    ((global::Random.Next() & 0xFFFF) / (65536f) - 0.5f);
+                w.Alloc(System.Ai.CBOW.DIMS);
+                for (int i = 0; i < w.Z.Length; i++) {
+                    w.Z[i].Re = ((global::Random.Next() & 0xFFFF) / (65536f) - 0.5f);
+                    w.Z[i].Im = ((global::Random.Next() & 0xFFFF) / (65536f) - 0.5f);
+                }
+                w.z.Im = 0;
+                if (w.z.Re > 0) {
+                    w.z.Re = (float)Math.Round(w.z.Re);
+                } else {
+                    w.z.Re = 0;
+                }
+                norm = Math.Max(norm,
+                    w.z.Re);
+            }
+            if (norm != 0) {
+                foreach (var w in Model) {
+                    w.z.Im = w.z.Re / (float)norm;
+                }
+            }
+        }
+
         public static double PowScale(double score) {
             const double POW = 0.7351;
             const int Xmax = 100;
@@ -114,11 +371,11 @@ namespace System.Ai {
 
         public const int VERBOSITY = 13;
         public static class Defaults {
-            public const double lr = 0.371;
-            public const int WINDOW = 13,
+            public const double lr = 0.0371;
+            public const int WINDOW = 7,
                 NEGATIVES = 3;
-            public const int DIMS = 128,
-                THRESHOLD = 7;
+            public const int DIMS = 37,
+                THRESHOLD = 1;
         }
         public static double lr = Defaults.lr;
         public static int WINDOW = Defaults.WINDOW,
@@ -142,7 +399,7 @@ namespace System.Ai {
                 float dot = 0,
                     score;
                 for (int j = 0; j < Re.Length; j++) {
-                    dot += c.Axis[j].Im * Re[j];
+                    dot += c.Z[j].Im * Re[j];
                 }
                 score = (float)Sigmoid.f(dot);
                 if (best[b] == null || best[b].z.Re < score) {
@@ -309,7 +566,7 @@ namespace System.Ai {
             score = binaryLogistic(
                 input,
                 grads,
-                wo.Axis,
+                wo.Z,
                 label ? 1.0 : 0.0,
                 lr);
             if (label) {
@@ -338,9 +595,9 @@ namespace System.Ai {
         static void updateInputVector(Vector[] Wi, double[] grads) {
             foreach (Vector wi in Wi) {
                 if (Wi == null) continue;
-                Debug.Assert(wi.Axis.Length == grads.Length);
-                for (var j = 0; j < wi.Axis.Length; j++) {
-                    wi.Axis[j].Re += (float)grads[j];
+                Debug.Assert(wi.Z.Length == grads.Length);
+                for (var j = 0; j < wi.Z.Length; j++) {
+                    wi.Z[j].Re += (float)grads[j];
                 }
             }
         }
@@ -351,11 +608,11 @@ namespace System.Ai {
             foreach (Vector i in Wi) {
                 if (i == null) continue;
                 if (wi == null) {
-                    wi = new double[i.Axis.Length];
+                    wi = new double[i.Z.Length];
                 }
-                Debug.Assert(wi.Length == i.Axis.Length);
+                Debug.Assert(wi.Length == i.Z.Length);
                 for (var j = 0; j < wi.Length; j++) {
-                    wi[j] += i.Axis[j].Re;
+                    wi[j] += i.Z[j].Re;
                 }
                 cc++;
             }
@@ -404,5 +661,213 @@ namespace System.Ai {
             }
             Interlocked.Increment(ref verbOut);
         }
+    }
+    public static partial class CBOW {
+        public static void SaveToFile(Vector[] Model, string fmt, int dims, string outputFilePath) {
+            SaveToFile(
+                Model,
+                fmt,
+                dims,
+                outputFilePath,
+                0,
+                Model.Length);
+        }
+        public static void SaveToFile(Vector[] Model, string fmt, int dims, string outputFilePath,
+            int offset, int len) {
+            Console.Write($"\r\nSaving: {outputFilePath}...\r\n");
+            using (var stream = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None)) {
+                int i = 0;
+                string s;
+                s = $"{fmt} " +
+                    $"| {dims}\r\n";
+                byte[] bytes = Encoding.UTF8.GetBytes(s);
+                stream.Write(bytes,
+                    0, bytes.Length);
+                for (int sample = offset; sample < (offset + len); sample++) {
+                    Vector it = Model[sample];
+                    if (it == null) {
+                        continue;
+                    }
+                    var sb = new StringBuilder();
+                    Complex[] axis = it.Z;
+                    if (axis != null) {
+                        for (var j = 0; j < axis.Length; j++) {
+                            if (fmt == "MIDI") {
+                                if (axis[j].Re <= 0) {
+                                    continue;
+                                }
+                            }
+                            if (sb.Length > 0) {
+                                sb.Append(" ");
+                            }
+                            sb.Append(axis[j]);
+                        }
+                    }
+                    var score = it.z.ToString();
+                    if (sb.Length > 0) {
+                        s = $"{it.Id} | {score} | {sb.ToString()}\r\n";
+                    } else {
+                        s = $"{it.Id} | {score}\r\n";
+                    }
+                    bytes = Encoding.UTF8.GetBytes(s);
+                    stream.Write(bytes,
+                        0, bytes.Length);
+                    i++;
+                }
+            }
+            Console.Write("\r\nReady!\r\n");
+        }
+
+        public static Matrix LoadFromFile(string inputFilePath, int size, out string fmt, out int dims) {
+            Matrix Model = new Matrix(size);
+            fmt = null;
+            Console.Write($"\r\nReading: {inputFilePath}...\r\n\r\n");
+            string[] lines = File.ReadAllLines(inputFilePath);
+            dims = 0;
+            for (int i = 0; i < lines.Length; i++) {
+                string l = lines[i];
+                if (string.IsNullOrWhiteSpace(l)) {
+                    continue;
+                }
+                if (i == 0) {
+                    ParseHeader(l, out fmt, out dims);
+                } else {
+                    ParseVector(Model, fmt, l, dims);
+                }
+            }
+            Console.Write($"Ready!\r\n\r\n");
+            return Model;
+        }
+        static void ParseHeader(string sz, out string fmt, out int dims) {
+            dims = -1;
+            int i = 0, wordStart = i;
+            while (i < sz.Length && (sz[i] != ' ' && sz[i] != '|' && sz[i] != '⁞')) {
+                i++;
+            }
+            fmt = sz.Substring(wordStart, i - wordStart);
+            while (i < sz.Length && (sz[i] == ' '
+                    || sz[i] == '|' || '⁞' == sz[i])) {
+                i++;
+            }
+            if (fmt != "CLI" && fmt != "MEL" && fmt != "CBOW" && fmt != "MIDI") {
+                throw new InvalidDataException();
+            }
+            int section = 0;
+            for (; ; ) {
+                wordStart = i;
+                while (i < sz.Length && (sz[i] == '-' || sz[i] == '+' || sz[i] == 'E'
+                        || sz[i] == '.' || char.IsDigit(sz[i]))) {
+                    i++;
+                }
+                if (i > wordStart) {
+                    string num = sz.Substring(wordStart, i - wordStart);
+                    switch (section) {
+                        case 0:
+                            dims = int.Parse(num);
+                            break;
+                        default:
+                            throw new InvalidDataException();
+                    }
+                    while (i < sz.Length && (sz[i] == ' ' || sz[i] == '|' || '⁞' == sz[i])) {
+                        if (sz[i] == '|' || sz[i] == '⁞') {
+                            section++;
+                        }
+                        i++;
+                    }
+                } else {
+                    break;
+                }
+            }
+        }
+        static void ParseVector(Matrix Model, string fmt, string sz, int dims) {
+            int i = 0, wordStart = i;
+            while (i < sz.Length && (sz[i] != '\t' && sz[i] != ' '
+                            && sz[i] != '•' && sz[i] != '|' && sz[i] != '⁞')) {
+                i++;
+            }
+            string w = sz.Substring(wordStart, i - wordStart);
+            while (i < sz.Length && (sz[i] == '\t' || sz[i] == ' '
+                            || sz[i] == '•' || sz[i] == '|' || sz[i] == '⁞')) {
+                i++;
+            }
+            Vector vec;
+            if (fmt == "CBOW" || fmt == "MEL" || fmt == "CLI") {
+                vec = Model.Push(w);
+                if (vec.Z == null) {
+                    vec.Alloc(dims);
+                }
+            } else {
+                throw new InvalidDataException();
+            }
+            int section = 0,
+                    n = 0;
+            if (fmt == "MIDI") {
+                n = dims;
+            }
+            for (; ; ) {
+                wordStart = i;
+                while (i < sz.Length && (sz[i] == '±' || sz[i] == '-' || sz[i] == '+' || sz[i] == 'E'
+                        || sz[i] == 'A' || sz[i] == 'B' || sz[i] == 'C'
+                        || sz[i] == 'D' || sz[i] == 'F' || sz[i] == 'G'
+                        || sz[i] == '#'
+                        || sz[i] == '.' || char.IsDigit(sz[i]))) {
+                    i++;
+                }
+                var ImSign = +1;
+                int len = (i - wordStart) - 1;
+                while (wordStart + len > 0 && wordStart + len < sz.Length
+                        && (sz[wordStart + len] == '-' || sz[wordStart + len] == '+' || sz[wordStart + len] == '±')) {
+                    if (sz[wordStart + len] == '-') {
+                        ImSign = -1;
+                    }
+                    len--;
+                }
+                string Re = sz.Substring(wordStart, len + 1);
+                string Im = null;
+                if (i < sz.Length && (sz[i] == 'i')) {
+                    i++;
+                    wordStart = i;
+                    while (i < sz.Length && (sz[i] == '-' || sz[i] == '+' || sz[i] == 'E'
+                            || sz[i] == 'A' || sz[i] == 'B' || sz[i] == 'C'
+                            || sz[i] == 'D' || sz[i] == 'F' || sz[i] == 'G'
+                            || sz[i] == '#'
+                            || sz[i] == '.' || char.IsDigit(sz[i]))) {
+                        i++;
+                    }
+                    Im = sz.Substring(wordStart, i - wordStart);
+                }
+                if (!string.IsNullOrWhiteSpace(Re)) {
+                    switch (section) {
+                        case 0:
+                            vec.z.Re = float.Parse(Re);
+                            if (!string.IsNullOrWhiteSpace(Im)) {
+                                vec.z.Im = ImSign * float.Parse(Im);
+                            }
+                            break;
+                        case 1:
+                            vec.Z[n].Re = float.Parse(Re);
+                            if (!string.IsNullOrWhiteSpace(Im)) {
+                                vec.Z[n].Im = ImSign * float.Parse(Im);
+                            }
+                            n++;
+                            break;
+                        default:
+                            throw new InvalidDataException();
+                    }
+                    while (i < sz.Length && (sz[i] == '\t' || sz[i] == ' ' || sz[i] == '•' || sz[i] == '|' || sz[i] == '⁞')) {
+                        if (sz[i] == '•' || sz[i] == '|' || sz[i] == '⁞') {
+                            section++;
+                        }
+                        i++;
+                    }
+                } else /* End of Line */ {
+                    if (n != dims) {
+                        throw new InvalidDataException();
+                    }
+                    break;
+                }
+            }
+        }
+
     }
 }

@@ -20,39 +20,7 @@ namespace System.Collections {
         protected int _count;
         public int Count => _count;
         protected T[] _data;
-        public T[] GetBuffer() => _data;
         public int Capacity { get => _data.Length; }
-        public T this[int index] {
-            get {
-                return _data[index];
-            } set {
-                if (_data[index] != null) {
-                    if (value == null) {
-                        _count--;
-                    }
-                } else {
-                    if (value != null) {
-                        _count++;
-                    }
-                }
-                if (value != null) {
-                    if (index > 0) {
-                        if (_data[index - 1] == null) {
-                            // Prevent gaps....
-                            throw new InvalidOperationException();
-                        }
-                    }
-                } else {
-                    if (index < _data.Length - 2) {
-                        if (_data[index + 1] != null) {
-                            // Prevent gaps....
-                            throw new InvalidOperationException();
-                        }
-                    }
-                }
-                _data[index] = value;
-            }
-        }
         public T this[string id, int hashCode] {
             get {
                 int index = Dot.LinearProbe(_data, id, hashCode,
