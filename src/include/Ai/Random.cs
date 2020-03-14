@@ -5,12 +5,17 @@
         int i = ((int)(Seed & 0x7FFFFFFF)) % max;
         return i;
     }
-    public static void Shuffle<T>(T[] items, int length) {
+    public static void Randomize(double[] A) {
+        for (int i = 0; i < A.Length; i++) {
+            A[i] = ((global::Random.Next() & 0xFFFF) / (65536f) - 0.5f);
+        }
+    }
+    public static void Shuffle<T>(T[] A, int length) {
         for (int i = 0; i < length; i++) {
-            T j = items[i];
+            T j = A[i];
             int n = Next(length);
-            items[i] = items[n];
-            items[n] = j;
+            A[i] = A[n];
+            A[n] = j;
         }
     }
 }

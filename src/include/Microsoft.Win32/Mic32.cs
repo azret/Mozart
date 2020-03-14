@@ -20,7 +20,9 @@
 
         public float Phase => GetLocalTime();
 
-        public Mic32(int cc, int nSamplesPerSec, Action<Mic32, IntPtr> onReady) {
+        Action<Mic32, IntPtr> _onReady;
+
+        public Mic32(int cc, int nSamplesPerSec, Action<Mic32, IntPtr> ready) {
             var m = (int)Math.Log(cc, 2);
             if (cc <= 0 || Math.Pow(2, m) != cc || cc > nSamplesPerSec) {
                 throw new ArgumentException();
@@ -36,13 +38,14 @@
             this._wfx.nSamplesPerSec = nSamplesPerSec;
             this._wfx.nAvgBytesPerSec = _wfx.nSamplesPerSec * _wfx.nBlockAlign;
             this._wfx.cbSize = 0;
+            this._onReady = ready;
             this._hwiproc = new WinMM.WaveInProc((IntPtr waveInHandle, WinMM.WaveInMessage message,
                         IntPtr instance, IntPtr wh, IntPtr param2) => {
                             lock (_disposeLock) {
                                 try {
                                     if (_hwih != IntPtr.Zero &&
-                                            onReady != null && message == WinMM.WaveInMessage.DataReady) {
-                                        onReady(this, wh);
+                                            _onReady != null && message == WinMM.WaveInMessage.DataReady) {
+                                        _onReady(this, wh);
                                     }
                                 } catch (WinMMException) {
                                 }
@@ -99,7 +102,7 @@
             }
         }
 
-        public void Open(bool muted = true) {
+        public void Open(bool startmMuted = true) {
             const int WaveInMapperDeviceId = -1;
             if (this._hwih != IntPtr.Zero) {
                 throw new InvalidOperationException("The device is already open.");
@@ -117,11 +120,8 @@
             this._hwih = h;
             this.AllocateHeaders();
             _isMuted = true;
-            if (!muted) {
-                WinMM.Throw(
-                   WinMM.waveInStart(this._hwih),
-                   WinMM.ErrorSource.WaveIn);
-                _isMuted = false;
+            if (!startmMuted) {
+                UnMute();
             }
         }
 
@@ -190,6 +190,10 @@
 
         bool _isMuted = true;
 
+        public bool IsMuted {
+            get => _isMuted;
+        }
+
         public void Toggle() {
             if (!_isMuted) {
                 Mute();
@@ -203,6 +207,9 @@
             WinMM.Throw(
                 WinMM.waveInStop(this._hwih),
                 WinMM.ErrorSource.WaveIn);
+            if (_onReady != null) {
+                _onReady(this, IntPtr.Zero);
+            }
         }
 
         public void UnMute() {
@@ -210,6 +217,9 @@
                WinMM.waveInStart(this._hwih),
                WinMM.ErrorSource.WaveIn);
             _isMuted = false;
+            if (_onReady != null) {
+                _onReady(this, IntPtr.Zero);
+            }
         }
 
         public void Dispose() {

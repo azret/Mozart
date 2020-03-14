@@ -69,14 +69,32 @@ unsafe partial class App {
             App app,
             string cliString,
             Func<bool> IsTerminated) {
-        if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase) 
+        if (cliString.StartsWith("--fit", StringComparison.OrdinalIgnoreCase)
+                    || cliString.StartsWith("fit", StringComparison.OrdinalIgnoreCase)) {
+            double[] W = new double[13];
+            global::Random.Randomize(W);
+            System.Ai.Fit.train(
+                0.01,
+                Sample: () => {
+                    var X = new double[W.Length];
+                    return X;
+                },
+                W: W,
+                F: (X) => {
+                    return false;
+                },
+                SetLoss: (loss) => {
+                    Console.WriteLine(loss);
+                },
+                HasCtrlBreak: IsTerminated);
+        } else if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase) 
                     || cliString.StartsWith("cbow", StringComparison.OrdinalIgnoreCase)) {
             return System.Ai.CBOW.Train(
                 app.CurrentDirectory,
                 "*.*",
                 IsTerminated);
         } else if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
-            return ShowMic(
+            return ShowMicWinUI(
                 app,
                 cliString,
                 IsTerminated);
@@ -103,7 +121,7 @@ unsafe partial class App {
         return false;
     }
 
-    Thread StartWinUI<T>(Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
+    Thread StartWinUI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
         Color bgColor, Plot2D<T>.KeyDown onKeyDown = null, Action onDone = null, Icon hIcon = null,
         Size? size = null)
         where T : class {
@@ -111,12 +129,12 @@ unsafe partial class App {
             IntPtr handl = IntPtr.Zero;
             Plot2D<T> hWnd = null;
             try {
-                hWnd = new Plot2D<T>($"{title}",
+                hWnd = new Plot2D<T>(controller, title,
                     onDrawFrame, onKeyDown,
                     TimeSpan.FromMilliseconds(1000),
                     onGetFrame, bgColor, hIcon, size);
-                hWnd.Show();
                 AddHandle(handl = hWnd.hWnd);
+                hWnd.Show();
                 while (User32.GetMessage(out MSG msg, hWnd.hWnd, 0, 0) != 0) {
                     User32.TranslateMessage(ref msg);
                     User32.DispatchMessage(ref msg);
@@ -141,14 +159,16 @@ unsafe partial class App {
     }
 
     int onKeyDown<T>(IntPtr hWnd, WM msg, IntPtr wParam, IntPtr lParam, T frame) {
-        WinMM.PlaySound(null,
-                IntPtr.Zero,
-                WinMM.PLAYSOUNDFLAGS.SND_ASYNC |
-                WinMM.PLAYSOUNDFLAGS.SND_FILENAME |
-                WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
-                WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
-                WinMM.PLAYSOUNDFLAGS.SND_PURGE);
-        Toggle();
+        if (wParam == new IntPtr(0x20)) {
+            WinMM.PlaySound(null,
+                    IntPtr.Zero,
+                    WinMM.PLAYSOUNDFLAGS.SND_ASYNC |
+                    WinMM.PLAYSOUNDFLAGS.SND_FILENAME |
+                    WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
+                    WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
+                    WinMM.PLAYSOUNDFLAGS.SND_PURGE);
+            Toggle();
+        }
         return 0;
     }
 

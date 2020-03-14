@@ -147,6 +147,8 @@ namespace Microsoft {
             public static extern Boolean GetClassInfoEx(IntPtr hInstance, string lpClassName, ref WNDCLASSEX lpWndClass);
             [DllImport("kernel32.dll", CharSet = CharSet.Ansi)]
             public static extern IntPtr GetModuleHandle(string lpModuleName);
+            [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+            public static extern bool SetWindowText(IntPtr hwnd, String lpString);
             public enum WindowLongFlags : int {
                 GWL_EXSTYLE = -20,
                 GWLP_HINSTANCE = -6,

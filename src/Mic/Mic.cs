@@ -24,7 +24,37 @@ namespace Microsoft.WinMM {
 unsafe partial class App {
     Mic32 hMic32;
 
-    static bool ShowMic(App app,
+    class MicWinUIController : IPlot2DController {
+        Mic32 _hMic32;
+
+        public MicWinUIController(Mic32 hMic32) {
+            _hMic32 = hMic32;
+        }
+
+        public void OnWinShow(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
+            if (hWnd != IntPtr.Zero) {
+                UpdateTitle(hWnd);
+            }
+        }
+
+        private void UpdateTitle(IntPtr hWnd) {
+            if (_hMic32.IsMuted) {
+                Microsoft.Win32.User32.SetWindowText(hWnd, "Live Recording - OFF");
+            } else {
+                Microsoft.Win32.User32.SetWindowText(hWnd, "Live Recording - ON");
+            }
+        }
+
+        public void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
+            // Mute/UnMute change notification
+            if (lParam == IntPtr.Zero && hWnd != IntPtr.Zero
+                && wParam == _hMic32.Handle) {
+                UpdateTitle(hWnd);
+            }
+        }
+    }
+
+    static bool ShowMicWinUI(App app,
         string cliScript,
         Func<bool> IsTerminated) {
         if (cliScript.StartsWith("--mic")) {
@@ -35,15 +65,16 @@ unsafe partial class App {
             throw new ArgumentException();
         }
         app.UnMute();
-        app.StartWinUI<IStream>(
-            DrawMic, () => app?.hMic32, "Live Recording - ON",
+        app.StartWinUI<IStream>(new MicWinUIController(app.hMic32),
+            DrawPeaks, () => app?.hMic32,
+            "Live Recording",
             Color.White,
             app.onKeyDown,
             () => {
                 app.Mute();
             },
             Mozart.Properties.Resources.Wave,
-            new Size(300, 200));
+            new Size(500, 400));
         return false;
     }
 
@@ -67,7 +98,9 @@ unsafe partial class App {
                 //var fft = Complex.FFT(X);
                 // Stream.Push(X);
                 // Print.Dump(fft, Stream.Hz);
-                Notify(null, IntPtr.Zero);
+                Notify(hMic, hWaveHeader);
+            } else {
+                Notify(hMic, hWaveHeader);
             }
         });
         try {
@@ -97,71 +130,5 @@ unsafe partial class App {
             hMic32 = OpenMic();
         }
         hMic32.UnMute();
-    }
-
-    static void DrawMic(Graphics g, RectangleF clientRect, float phase, IStream Source) {
-        phase = Source?.Phase ?? 0;
-
-        float hz = Source?.Hz ?? 0;
-        var X = Source?.Peek();
-        if (X == null) return;
-
-        var pen = Pens.LightGray;
-
-        for (int x = 0; x < clientRect.Width; x++) {
-            if (x > 0 && x % 13 == 0) {
-                g.DrawLine(pen,
-                    new PointF(x, 0),
-                    new PointF(x, clientRect.Height));
-            }
-        }
-        for (int y = 0; y < clientRect.Height; y++) {
-            if (y > 0 && y % 13 == 0) {
-                g.DrawLine(pen,
-                    new PointF(0, y),
-                    new PointF(clientRect.Width, y));
-            }
-        }
-
-        Sound.Math.Envelope(X);
-
-        DrawCurve(Color.Gray, g, clientRect, X, 2f);
-
-        var fft = Complex.FFT(X);
-
-        Sound.Math.Clean(fft, hz);
-
-        X = Complex.InverseFFT(fft);
-
-        DrawCurve(Color.DarkRed, g, clientRect, X, 2f);
-
-        string s = $"{phase:n4}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.LimeGreen, clientRect.Right - 8 - sz.Width,
-                 8);
-        }
-    }
-
-    static void DrawBars(Graphics g, RectangleF clientRect, float phase, IStream Source) {
-        float hz = Source?.Hz ?? 0;
-        var X = Source?.Peek();
-        if (X == null) return;
-        Sound.Math.Envelope(X);
-        var fft = Complex.FFT(X);
-        DrawBars(Color.White,
-            g, clientRect, fft, (float)1, fft.Length / 2);
-        Sound.Math.Clean(fft, hz);
-        DrawBars(Color.DarkRed,
-            g, clientRect, fft, -(float)1, fft.Length / 2);
-        string s = $"{phase:n4}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.LightGray, clientRect.Right - 8 - sz.Width,
-                 8);
-        }
-        DrawCurve(Color.Green, g, clientRect, X, 1f);
     }
 }

@@ -5,15 +5,23 @@ namespace System.Ai {
     public static partial class Fit {
         public const int GENS = (int)1e6;
 
-        public static double binaryLogistic(double[] X, double[] W, double label, double lr) {
-            Debug.Assert(label >= -1 && label <= 1);
-            Debug.Assert(lr >= 0 && lr <= 1);
+        public static double binaryLogistic(double[] X, double[] W) {
+            Debug.Assert(X.Length == W.Length);
             int len = X.Length;
             double Dot = 0.0;
             for (int j = 0; j < len; j++) {
                 Dot += X[j] * W[j];
             }
-            var y = Tanh.f(Dot);
+            var y = Sigmoid.f(Dot);
+            return y;
+        }
+
+        public static double binaryLogistic(double[] X, double[] W, double label, double lr) {
+            Debug.Assert(X.Length == W.Length);
+            Debug.Assert(label >= 0 && label <= 1);
+            Debug.Assert(lr > 0 && lr <= 1);
+            int len = X.Length;
+            var y = binaryLogistic(X, W);
             double diff = lr * (label - y);
             if (double.IsNaN(diff) || double.IsInfinity(diff)) {
                 Console.WriteLine("NaN detected...");
@@ -25,10 +33,10 @@ namespace System.Ai {
             return y;
         }
 
-        static void Train(double[] X, double[] W, double y,
+        public static void train(double lr, Func<double[]> Sample, double[] W, Func<double[], bool> F,
                     Action<double> SetLoss, Func<bool> HasCtrlBreak) {
-            if (X == null) {
-                Console.WriteLine("Model not loaded.");
+            if (Sample == null) {
+                Console.WriteLine("Sample not found.");
                 return;
             }
             Thread[] threads = new Thread[Environment.ProcessorCount * 2];
@@ -41,23 +49,26 @@ namespace System.Ai {
                             if (HasCtrlBreak != null && HasCtrlBreak()) {
                                 break;
                             }
-
-                            // if (label) {
-                            //     err = -System.Math.Log(score);
-                            // } else {
-                            //     err = -System.Math.Log(1.0 - score);
-                            // }
-                            // if (!double.IsNaN(err) && !double.IsInfinity(err)) {
-                            //     loss += err;
-                            //     cc++;
-                            // } else {
-                            //     Console.WriteLine("NaN detected...");
-                            // }
-                            // if (cc > 0) {
-                            //     loss = loss / cc;
-                            // }
-
-                            SetLoss(0);
+                            double loss = 0,
+                                cc = 0,
+                                err;
+                            var X = Sample();
+                            bool label = F(X);
+                            if (label) {
+                                err = -System.Math.Log(binaryLogistic(X, W, 1.0, lr));
+                            } else {
+                                err = -System.Math.Log(1.0 - binaryLogistic(X, W, 0.0, lr));
+                            }
+                            if (!double.IsNaN(err) && !double.IsInfinity(err)) {
+                                loss += err;
+                                cc++;
+                            } else {
+                                Console.WriteLine("NaN or Infinity detected...");
+                            }
+                            if (cc > 0) {
+                                loss = loss / cc;
+                            }
+                            SetLoss(loss);
                             Thread.Sleep(3000 + global::Random.Next(3000));
                         }
                     } finally {

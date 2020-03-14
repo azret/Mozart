@@ -25,6 +25,39 @@ namespace Sound {
                     * (float)Shapes.Hann(s, samples);
             }
         }
+        public static float[] Peaks(float[] X) {
+            bool[] peaks = new bool[X.Length];
+            bool[] troughs = new bool[X.Length];
+            for (int i = 0; i < X.Length; i++) {
+                if (i > 0 && i < X.Length - 1) {
+                    if (X[i - 1] < X[i]) {
+                        peaks[i - 1] = false;
+                        peaks[i] = true;
+                    } else if (X[i - 1] > X[i]) {
+                        troughs[i - 1] = false;
+                        troughs[i] = true;
+                    } else if (X[i - 1] == X[i]) {
+                        peaks[i] = true;
+                        troughs[i] = true;
+                    }
+                } else {
+                    peaks[i] = true;
+                    troughs[i] = true;
+                }
+            }
+            int cc = 0;
+            float[] Y = new float[X.Length];
+            for (int i = 0; i < X.Length; i++) {
+                if (peaks[i] || troughs[i]) {
+                    if (cc >= Y.Length) {
+                        Array.Resize(ref Y, (int)((Y.Length + 7) * 1.75));
+                    }
+                    Y[cc++] = X[i];
+                }
+            }
+            Array.Resize(ref Y, cc);
+            return Y;
+        }
         public static void Clean(Complex[] fft, float hz) {
             var samples = fft.Length;
             double h = hz

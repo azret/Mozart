@@ -1,12 +1,16 @@
 ﻿namespace Microsoft.Win32.Plot2D {
     using System;
     using System.ComponentModel;
-    using System.Diagnostics;
     using System.Drawing;
     using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Threading;
     using Microsoft.Win32;
+
+    public interface IPlot2DController {
+        void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
+        void OnWinShow(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
+    }
 
     public class Plot2D {
         public static readonly Font Font = new Font("Consolas", 14.5f);
@@ -62,6 +66,9 @@
                 case WM.PAINT:
                     OnPaint(_onDrawFrame, _getFrame, 1, hWnd);
                     return 0;
+                case WM.SHOWWINDOW:
+                    _controller?.OnWinShow(hWnd, wParam, lParam);
+                    break;
                 case WM.DESTROY:
                     Dispose();
                     User32.PostQuitMessage(0);
@@ -78,9 +85,11 @@
             internal WNDCLASSEX _lpwcx;
             internal WndProc lpfnDefWndProcPtr = new WndProc(User32.DefWindowProc);
         }
+        IPlot2DController _controller;
         ClassTemplate _ClassTemplate;
-        public Plot2D(string title, DrawFrame onDrawFrame, KeyDown onKeyDown, TimeSpan framesPerSecond,
+        public Plot2D(IPlot2DController controller, string title, DrawFrame onDrawFrame, KeyDown onKeyDown, TimeSpan framesPerSecond,
             Func<T> getFrame, Color bgColor, System.Drawing.Icon hIcon, Size? sz) {
+            _controller = controller;
             _getFrame = getFrame;
             _onDrawFrame = onDrawFrame;
             _onKeyDown = onKeyDown;
@@ -240,9 +249,10 @@
             User32.EndPaint(hWnd, ref ps);
         }
 
-        private static unsafe void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
+        private unsafe void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
             User32.GetClientRect(hWnd, out RECT lprctw3);
             User32.InvalidateRect(hWnd, ref lprctw3, false);
+            _controller?.OnWinMM(hWnd, wParam, lParam);
         }
 
         public void Invalidate() {
