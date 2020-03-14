@@ -94,18 +94,18 @@ unsafe partial class App {
                 "*.*",
                 IsTerminated);
         } else if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
-            return ShowMicWinUI(
+            return StartMicWinUI(
                 app,
                 cliString,
                 IsTerminated);
         } else if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
-            var wav = new Stream();
-            var X = Sound.Tools.Sine(440,
+            var wav = new System.Audio.Stream();
+            var X = System.Audio.Tools.Sine(440,
                 wav.Hz,
                 1024);
             wav.Push(X);
             app.UnMute();
-            app.StartWinUI<IStream>(null,
+            app.StartWinUI<System.Audio.IStream>(null,
                 Curves.DrawFourierTransform, () => wav, "Fast Fourier Transform",
                 Color.Gainsboro,
                 null);
@@ -128,18 +128,17 @@ unsafe partial class App {
     }
 
     public Thread StartWinUI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
-        Color bgColor, Plot2D<T>.KeyDown onKeyDown = null, Action onDone = null, Icon hIcon = null,
-        Size? size = null)
+        Color bgColor, Icon hIcon = null, Size? size = null)
         where T : class {
         Thread t = new Thread(() => {
             IntPtr handl = IntPtr.Zero;
             Plot2D<T> hWnd = null;
             try {
                 hWnd = new Plot2D<T>(controller, title,
-                    onDrawFrame, onKeyDown,
+                    onDrawFrame,
                     TimeSpan.FromMilliseconds(1000),
                     onGetFrame, bgColor, hIcon, size);
-                AddHandle(handl = hWnd.hWnd);
+                AddWinUIHandle(handl = hWnd.hWnd);
                 hWnd.Show();
                 while (User32.GetMessage(out MSG msg, hWnd.hWnd, 0, 0) != 0) {
                     User32.TranslateMessage(ref msg);
@@ -148,7 +147,7 @@ unsafe partial class App {
             } catch (Exception e) {
                 Console.Error?.WriteLine(e);
             } finally {
-                RemoveHandle(handl);
+                RemoveWinUIHandle(handl);
                 hWnd?.Dispose();
                 WinMM.PlaySound(null,
                         IntPtr.Zero,
@@ -157,68 +156,53 @@ unsafe partial class App {
                         WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
                         WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
                         WinMM.PLAYSOUNDFLAGS.SND_PURGE);
-                onDone?.Invoke();
             }
         });
         t.Start();
         return t;
     }
 
-    int onKeyDown<T>(IntPtr hWnd, WM msg, IntPtr wParam, IntPtr lParam, T frame) {
-        if (wParam == new IntPtr(0x20)) {
-            WinMM.PlaySound(null,
-                    IntPtr.Zero,
-                    WinMM.PLAYSOUNDFLAGS.SND_ASYNC |
-                    WinMM.PLAYSOUNDFLAGS.SND_FILENAME |
-                    WinMM.PLAYSOUNDFLAGS.SND_NODEFAULT |
-                    WinMM.PLAYSOUNDFLAGS.SND_NOWAIT |
-                    WinMM.PLAYSOUNDFLAGS.SND_PURGE);
-            Toggle();
-        }
-        return 0;
-    }
+    #region WinUI Events
 
-    #region Events
+    object _WinUILock = new object();
 
-    object _Win32Lock = new object();
+    private IntPtr[] _WinUIHandles;
 
-    private IntPtr[] _handles;
-
-    public void AddHandle(IntPtr hWnd) {
-        lock (_Win32Lock) {
-            if (_handles == null) {
-                _handles = new IntPtr[0];
+    public void AddWinUIHandle(IntPtr hWnd) {
+        lock (_WinUILock) {
+            if (_WinUIHandles == null) {
+                _WinUIHandles = new IntPtr[0];
             }
-            Array.Resize(ref _handles,
-                _handles.Length + 1);
-            _handles[_handles.Length - 1] = hWnd;
+            Array.Resize(ref _WinUIHandles,
+                _WinUIHandles.Length + 1);
+            _WinUIHandles[_WinUIHandles.Length - 1] = hWnd;
         }
     }
 
-    public void ClearHandles() {
-        lock (_Win32Lock) {
-            _handles = null;
+    public void ClearWinUIHandles() {
+        lock (_WinUILock) {
+            _WinUIHandles = null;
         }
     }
 
-    public void RemoveHandle(IntPtr hWnd) {
-        lock (_Win32Lock) {
-            if (_handles != null) {
-                for (int i = 0; i < _handles.Length; i++) {
-                    if (_handles[i] == hWnd) {
-                        _handles[i] = IntPtr.Zero;
+    public void RemoveWinUIHandle(IntPtr hWnd) {
+        lock (_WinUILock) {
+            if (_WinUIHandles != null) {
+                for (int i = 0; i < _WinUIHandles.Length; i++) {
+                    if (_WinUIHandles[i] == hWnd) {
+                        _WinUIHandles[i] = IntPtr.Zero;
                     }
                 }
             }
         }
     }
 
-    public unsafe void Notify(Microsoft.WinMM.Mic32 hMic, IntPtr hWaveHeader) {
-        lock (_Win32Lock) {
-            if (_handles == null) {
+    public unsafe void PostWinUIMessage(Microsoft.WinMM.Mic32 hMic, IntPtr hWaveHeader) {
+        lock (_WinUILock) {
+            if (_WinUIHandles == null) {
                 return;
             }
-            foreach (IntPtr hWnd in _handles) {
+            foreach (IntPtr hWnd in _WinUIHandles) {
                 if (hWnd != IntPtr.Zero) {
                     User32.PostMessage(hWnd, WM.WINMM,
                         hMic != null

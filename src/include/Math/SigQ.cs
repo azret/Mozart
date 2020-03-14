@@ -73,13 +73,13 @@ public class SigQ : IFunc {
     public static readonly IFunc Ω = New();
     public static IFunc New() { return new SigQ(); }
     public override string ToString() { return "ƒ(a) = 1 / (1 + e⁻ᵃ)"; }
-    public static double f(double a) {
-        if (a < -SIGMOID) {
+    public static double f(double x) {
+        if (x < -SIGMOID) {
             return 0.0;
-        } else if (a > SIGMOID) {
+        } else if (x > SIGMOID) {
             return 1.0;
         } else {
-            int i = (int)(((a / SIGMOID) + 1) / 2 * _TABLE_SIZE);
+            int i = (int)(((x / SIGMOID) + 1) / 2 * _TABLE_SIZE);
             return _TABLE[i];
         }
     }

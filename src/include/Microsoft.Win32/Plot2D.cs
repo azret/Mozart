@@ -10,6 +10,8 @@
     public interface IPlot2DController {
         void WM_WINMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
         void WM_SHOWWINDOW(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
+        void WM_KEYDOWN(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
+        void WM_CLOSE(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
     }
 
     public class Plot2D {
@@ -40,7 +42,6 @@
         }
         public readonly Func<T> _getFrame;
         DrawFrame _onDrawFrame;
-        KeyDown _onKeyDown;
         int DefWndProc(IntPtr hWnd, WM msg, IntPtr wParam, IntPtr lParam) {
             return User32.DefWindowProc(hWnd, msg, wParam, lParam);
         }
@@ -53,10 +54,7 @@
                     OnWinMM(hWnd, wParam, lParam);
                     break;
                 case WM.KEYDOWN:
-                    if (_onKeyDown != null) {
-                        return _onKeyDown(hWnd, msg, wParam, lParam, _getFrame != null ?
-                            _getFrame() : null);
-                    }
+                    _controller?.WM_KEYDOWN(hWnd, wParam, lParam);
                     return 0;
                 case WM.SIZE:
                 case WM.SIZING:
@@ -66,6 +64,9 @@
                 case WM.PAINT:
                     OnPaint(_onDrawFrame, _getFrame, 1, hWnd);
                     return 0;
+                case WM.CLOSE:
+                    _controller?.WM_CLOSE(hWnd, wParam, lParam);
+                    break;
                 case WM.SHOWWINDOW:
                     _controller?.WM_SHOWWINDOW(hWnd, wParam, lParam);
                     break;
@@ -87,12 +88,11 @@
         }
         IPlot2DController _controller;
         ClassTemplate _ClassTemplate;
-        public Plot2D(IPlot2DController controller, string title, DrawFrame onDrawFrame, KeyDown onKeyDown, TimeSpan framesPerSecond,
+        public Plot2D(IPlot2DController controller, string title, DrawFrame onDrawFrame, TimeSpan framesPerSecond,
             Func<T> getFrame, Color bgColor, System.Drawing.Icon hIcon, Size? sz) {
             _controller = controller;
             _getFrame = getFrame;
             _onDrawFrame = onDrawFrame;
-            _onKeyDown = onKeyDown;
             _bgColor = bgColor;
             if (_ClassTemplate == null) {
                 _ClassTemplate = new ClassTemplate();
@@ -160,7 +160,6 @@
             lpfnWndProcPtr = null;
             hSurface2D?.Dispose();
         }
-        public delegate int KeyDown(IntPtr hWnd, WM msg, IntPtr wParam, IntPtr lParam, T GetSession);
         void OnPaint(DrawFrame onDrawFrame, Func<T> userState, float scale, IntPtr hWnd) {
             IntPtr hdc = User32.BeginPaint(hWnd, out PAINTSTRUCT ps);
             User32.GetClientRect(hWnd,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Audio;
 using Microsoft.Win32.Plot2D;
 
 unsafe partial class Curves {
@@ -25,14 +26,14 @@ unsafe partial class Curves {
 
         DrawCurve(Color.Black, Canvas, fill, X, 3f);
 
-        Sound.Tools.Envelope(X);
+        Tools.Envelope(X);
 
         var fft = Complex.FFT(X);
 
         DrawBars(Color.Black,
             Canvas, fill, fft, (float)System.Math.E, fft.Length / 7);
 
-        Sound.Tools.Clean(fft, hz);
+        Tools.Clean(fft, hz);
 
         DrawBars(Color.DarkRed,
             Canvas, fill, fft, -(float)System.Math.E, fft.Length / 7);
@@ -52,23 +53,23 @@ unsafe partial class Curves {
         float[] X =
             Source?.Peek();
 
-        X = Sound.Tools.Sine(440, hz, 1024);
+        X = Tools.Sine(440, hz, 1024);
 
         if (X == null) return;
 
-        Sound.Tools.Envelope(X);
+        Tools.Envelope(X);
 
-        DrawCurve(Color.Gray, g, clientRect, X, 2f);
+        DrawCurve(Color.LightGray, g, clientRect, X, 2f);
 
         var fft = Complex.FFT(X);
 
-        Sound.Tools.Clean(fft, hz);
+        Tools.Clean(fft, hz);
 
         X = Complex.InverseFFT(fft);
 
-        Sound.Tools.Envelope(X);
+        Tools.Envelope(X);
 
-        var peaks = Sound.Tools.Peaks(X);
+        var peaks = Tools.Peaks(X);
 
         DrawCurve(Color.DarkRed, g, clientRect, peaks, 2f);
 
@@ -76,7 +77,7 @@ unsafe partial class Curves {
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
-                s, Plot2D.Font, Brushes.LimeGreen, clientRect.Right - 8 - sz.Width,
+                s, Plot2D.Font, Brushes.DarkGray, clientRect.Right - 8 - sz.Width,
                  8);
         }
     }
@@ -124,13 +125,13 @@ unsafe partial class Curves {
             }
         }
 
-        Sound.Tools.Envelope(X);
+        Tools.Envelope(X);
 
         DrawCurve(Color.Gray, g, clientRect, X, 2f);
 
         var fft = Complex.FFT(X);
 
-        Sound.Tools.Clean(fft, hz);
+        Tools.Clean(fft, hz);
 
         X = Complex.InverseFFT(fft);
 
@@ -149,11 +150,11 @@ unsafe partial class Curves {
         float hz = Source?.Hz ?? 0;
         var X = Source?.Peek();
         if (X == null) return;
-        Sound.Tools.Envelope(X);
+        Tools.Envelope(X);
         var fft = Complex.FFT(X);
         DrawBars(Color.White,
             g, clientRect, fft, (float)1, fft.Length / 2);
-        Sound.Tools.Clean(fft, hz);
+        Tools.Clean(fft, hz);
         DrawBars(Color.DarkRed,
             g, clientRect, fft, -(float)1, fft.Length / 2);
         string s = $"{phase:n4}s";

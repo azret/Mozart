@@ -63,29 +63,29 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Sound\IStream.cs" />
-    <Compile Include="Sound\Stream.cs" />
+    <Compile Include="Audio\IStream.cs" />
+    <Compile Include="Audio\Stream.cs" />
     <Compile Include="Viz\Curves.cs" />
     <Compile Include="App.cs" />
     <Compile Include="include\Wav\dB.cs" />
     <Compile Include="include\Wav\Scale.cs" />
-    <Compile Include="Sound\Tools.cs" />
+    <Compile Include="Audio\Tools.cs" />
     <Compile Include="include\Wav\Frequency.cs" />
-    <Compile Include="Sound\Ranges.cs" />
+    <Compile Include="Audio\Ranges.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
     <Compile Include="include\Microsoft.Win32\Plot2D.cs" />
     <Compile Include="include\Microsoft.Win32\Surface2D.cs" />
     <Compile Include="include\Microsoft.Win32\Win32.cs" />
     <Compile Include="include\Wav\Wav.cs" />
-    <Compile Include="include\Ai\Complex.cs" />
-    <Compile Include="include\Ai\IFunc.cs" />
-    <Compile Include="include\Ai\Random.cs" />
+    <Compile Include="include\Math\Complex.cs" />
+    <Compile Include="include\Math\IFunc.cs" />
+    <Compile Include="include\Math\Random.cs" />
     <Compile Include="include\Math\Shapes.cs" />
-    <Compile Include="include\Ai\SigF.cs" />
-    <Compile Include="include\Ai\Sigmoid.cs" />
-    <Compile Include="include\Ai\SigQ.cs" />
-    <Compile Include="include\Ai\Tanh.cs" />
-    <Compile Include="Sound\Print.cs" />
+    <Compile Include="include\Math\SigF.cs" />
+    <Compile Include="include\Math\Sigmoid.cs" />
+    <Compile Include="include\Math\SigQ.cs" />
+    <Compile Include="include\Math\Tanh.cs" />
+    <Compile Include="Audio\Print.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
