@@ -1,5 +1,6 @@
 ﻿namespace Microsoft.WinMM {
     using System;
+    using System.Diagnostics;
     using System.Runtime.InteropServices;
     using Microsoft.Win32;
 
@@ -67,7 +68,8 @@
             }
         }
 
-        public unsafe void CaptureData(float[] ch1) {
+        public unsafe void CH1(float[] ch1) {
+            Debug.Assert(ch1.Length == _cc);
             lock (_dataLock) {
                 for (int s = 0; s < _cc; s++) {
                     _CH1[s] = (float)ch1[s];

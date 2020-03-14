@@ -6,8 +6,6 @@ using Microsoft.Win32.Plot2D;
 using Microsoft.WinMM;
 
 namespace Microsoft.WinMM {
-    using System;
-
     public sealed partial class Mic32 : IStream {
         float IStream.Hz => _wfx.nSamplesPerSec;
 
@@ -16,7 +14,7 @@ namespace Microsoft.WinMM {
         }
 
         public void Push(float[] X) {
-            throw new NotImplementedException();
+            CH1(X);
         }
     }
 }
@@ -31,8 +29,15 @@ unsafe partial class App {
             _hMic32 = hMic32;
         }
 
-        public void OnWinShow(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
+        public void WM_SHOWWINDOW(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
             if (hWnd != IntPtr.Zero) {
+                UpdateTitle(hWnd);
+            }
+        }
+
+        public void WM_WINMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
+            if (lParam == IntPtr.Zero && hWnd != IntPtr.Zero
+                && wParam == _hMic32.Handle) {
                 UpdateTitle(hWnd);
             }
         }
@@ -42,14 +47,6 @@ unsafe partial class App {
                 Microsoft.Win32.User32.SetWindowText(hWnd, "Live Recording - OFF");
             } else {
                 Microsoft.Win32.User32.SetWindowText(hWnd, "Live Recording - ON");
-            }
-        }
-
-        public void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
-            // Mute/UnMute change notification
-            if (lParam == IntPtr.Zero && hWnd != IntPtr.Zero
-                && wParam == _hMic32.Handle) {
-                UpdateTitle(hWnd);
             }
         }
     }
@@ -66,7 +63,7 @@ unsafe partial class App {
         }
         app.UnMute();
         app.StartWinUI<IStream>(new MicWinUIController(app.hMic32),
-            DrawPeaks, () => app?.hMic32,
+            Curves.DrawPeaks, () => app?.hMic32,
             "Live Recording",
             Color.White,
             app.onKeyDown,
@@ -85,19 +82,12 @@ unsafe partial class App {
                 short* psData =
                     (short*)((*pwh).lpData);
                 hMic.CaptureData(pwh, psData);
-                // var f = 10 * ((float)44100 / (float)1024);
-                // f = 440;
-                // hMic.CaptureData(Process.Sine(f, hMic.Hz, hMic.Samples));
-                var X = hMic.CH1();
                 if (pwh != null) {
                     (*pwh).dwFlags = (*pwh).dwFlags & ~WaveHeaderFlags.Done;
                 }
                 WinMM.Throw(
                     WinMM.waveInAddBuffer(hMic.Handle, hWaveHeader, Marshal.SizeOf(typeof(WaveHeader))),
                     WinMM.ErrorSource.WaveIn);
-                //var fft = Complex.FFT(X);
-                // Stream.Push(X);
-                // Print.Dump(fft, Stream.Hz);
                 Notify(hMic, hWaveHeader);
             } else {
                 Notify(hMic, hWaveHeader);

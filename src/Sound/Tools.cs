@@ -3,7 +3,7 @@ using System.Audio;
 using System.Collections.Generic;
 
 namespace Sound {
-    public static class Math {
+    public static class Tools {
         public static float[] Sine(float f, float hz, int samples) {
             float[] X = new float[samples];
             for (int s = 0; s < samples; s++) {

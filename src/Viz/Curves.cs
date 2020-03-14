@@ -3,31 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using Microsoft.Win32.Plot2D;
 
-unsafe partial class App {
-    static bool ShowFourierTransform(App app,
-        string cliScript,
-        Func<bool> IsTerminated) {
-        if (cliScript.StartsWith("--fft")) {
-            cliScript = cliScript.Remove(0, "--fft".Length).Trim();
-        } else if (cliScript.StartsWith("fft")) {
-            cliScript = cliScript.Remove(0, "fft".Length).Trim();
-        } else {
-            throw new ArgumentException();
-        }
-        var wav = new Stream();
-        var X = Sound.Math.Sine(440,
-            wav.Hz,
-            1024);
-        wav.Push(X);
-        app.UnMute();
-        app.StartWinUI<IStream>(null,
-            DrawFourierTransform, () => wav, "Fast Fourier Transform (Mic)",
-            // Color.FromArgb(11, 45, 72),
-            Color.Gainsboro,
-            null);
-        return false;
-    }
-
+unsafe partial class Curves {
     public static void DrawFourierTransform(Graphics Canvas, RectangleF fill, float phase, IStream Source) {
         float hz = Source?.Hz ?? 0;
 
@@ -49,14 +25,14 @@ unsafe partial class App {
 
         DrawCurve(Color.Black, Canvas, fill, X, 3f);
 
-        Sound.Math.Envelope(X);
+        Sound.Tools.Envelope(X);
 
         var fft = Complex.FFT(X);
 
         DrawBars(Color.Black,
             Canvas, fill, fft, (float)System.Math.E, fft.Length / 7);
 
-        Sound.Math.Clean(fft, hz);
+        Sound.Tools.Clean(fft, hz);
 
         DrawBars(Color.DarkRed,
             Canvas, fill, fft, -(float)System.Math.E, fft.Length / 7);
@@ -66,7 +42,7 @@ unsafe partial class App {
         DrawCurve(Color.DarkRed, Canvas, fill, X, 2f);
     }
 
-    static void DrawPeaks(Graphics g, RectangleF clientRect, float phase, IStream Source) {
+    public static void DrawPeaks(Graphics g, RectangleF clientRect, float phase, IStream Source) {
         DrawBackPaper(g, clientRect);
 
         phase = Source?.Phase ?? 0;
@@ -76,23 +52,25 @@ unsafe partial class App {
         float[] X =
             Source?.Peek();
 
-        X = Sound.Math.Sine(440, hz, 1024);
+        X = Sound.Tools.Sine(440, hz, 1024);
 
         if (X == null) return;
 
-        Sound.Math.Envelope(X);
+        Sound.Tools.Envelope(X);
 
-        DrawCurve(Color.Gray, g, clientRect, X, 2f, false, false);
+        DrawCurve(Color.Gray, g, clientRect, X, 2f);
 
         var fft = Complex.FFT(X);
 
-        Sound.Math.Clean(fft, hz);
+        Sound.Tools.Clean(fft, hz);
 
         X = Complex.InverseFFT(fft);
 
-        var peaks = Sound.Math.Peaks(X);
+        Sound.Tools.Envelope(X);
 
-        DrawCurve(Color.DarkRed, g, clientRect, peaks, 2f, false, false);
+        var peaks = Sound.Tools.Peaks(X);
+
+        DrawCurve(Color.DarkRed, g, clientRect, peaks, 2f);
 
         string s = $"{phase:n4}s";
         if (s != null) {
@@ -146,17 +124,17 @@ unsafe partial class App {
             }
         }
 
-        Sound.Math.Envelope(X);
+        Sound.Tools.Envelope(X);
 
-        DrawCurve(Color.Gray, g, clientRect, X, 2f, false, false);
+        DrawCurve(Color.Gray, g, clientRect, X, 2f);
 
         var fft = Complex.FFT(X);
 
-        Sound.Math.Clean(fft, hz);
+        Sound.Tools.Clean(fft, hz);
 
         X = Complex.InverseFFT(fft);
 
-        DrawCurve(Color.DarkRed, g, clientRect, X, 2f, false, false);
+        DrawCurve(Color.DarkRed, g, clientRect, X, 2f);
 
         string s = $"{phase:n4}s";
         if (s != null) {
@@ -171,11 +149,11 @@ unsafe partial class App {
         float hz = Source?.Hz ?? 0;
         var X = Source?.Peek();
         if (X == null) return;
-        Sound.Math.Envelope(X);
+        Sound.Tools.Envelope(X);
         var fft = Complex.FFT(X);
         DrawBars(Color.White,
             g, clientRect, fft, (float)1, fft.Length / 2);
-        Sound.Math.Clean(fft, hz);
+        Sound.Tools.Clean(fft, hz);
         DrawBars(Color.DarkRed,
             g, clientRect, fft, -(float)1, fft.Length / 2);
         string s = $"{phase:n4}s";
@@ -189,27 +167,7 @@ unsafe partial class App {
     }
 
     static void DrawCurve(Color color, Graphics Canvas, RectangleF rect,
-        float[] X, float width = 1f, bool fill = false, bool peaksOnly = false) {
-
-        bool[] peaks = new bool[X.Length];
-        bool[] troughs = new bool[X.Length];
-        for (int i = 0; i < X.Length; i++) {
-            if (i > 0 && i < X.Length - 1) {
-                if (X[i - 1] < X[i]) {
-                    peaks[i - 1] = false;
-                    peaks[i] = true;
-                } else if (X[i - 1] > X[i]) {
-                    troughs[i - 1] = false;
-                    troughs[i] = true;
-                } else if (X[i - 1] == X[i]) {
-                    peaks[i] = true;
-                    troughs[i] = true;
-                }
-            } else {
-                peaks[i] = true;
-                troughs[i] = true;
-            }
-        }
+        float[] X, float width = 1f, bool fill = false) {
 
         var path = new System.Drawing.Drawing2D.GraphicsPath();
 
@@ -220,20 +178,18 @@ unsafe partial class App {
         int M = (int)rect.Height / 2;
 
         for (int i = 0; i < X.Length; i++) {
-            if (!peaksOnly || (peaksOnly && (troughs[i] || peaks[i]))) {
-                var ampl = X[i];
-                if (ampl < -1) ampl = -1;
-                if (ampl > 1) ampl = 1;
-                if (ampl < -1 || ampl > +1) {
-                    throw new IndexOutOfRangeException();
-                }
-                if (!fill) {
-                    ampl = (float)SigF.f(ampl) - 0.5f;
-                }
-                int x = Surface2D.linear(i, X.Length, rect.Width);
-                int y = Surface2D.linear(-(float)ampl, 1, M) + M;
-                Curve.Add(new PointF(x, y));
+            var ampl = X[i];
+            if (ampl < -1) ampl = -1;
+            if (ampl > 1) ampl = 1;
+            if (ampl < -1 || ampl > +1) {
+                throw new IndexOutOfRangeException();
             }
+            if (!fill) {
+                ampl = (float)SigF.f(ampl) - 0.5f;
+            }
+            int x = Surface2D.linear(i, X.Length, rect.Width);
+            int y = Surface2D.linear(-(float)ampl, 1, M) + M;
+            Curve.Add(new PointF(x, y));
         }
 
         path.AddCurve(Curve.ToArray());

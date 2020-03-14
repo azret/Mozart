@@ -99,10 +99,16 @@ unsafe partial class App {
                 cliString,
                 IsTerminated);
         } else if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
-            return ShowFourierTransform(
-                app,
-                cliString,
-                IsTerminated);
+            var wav = new Stream();
+            var X = Sound.Tools.Sine(440,
+                wav.Hz,
+                1024);
+            wav.Push(X);
+            app.UnMute();
+            app.StartWinUI<IStream>(null,
+                Curves.DrawFourierTransform, () => wav, "Fast Fourier Transform",
+                Color.Gainsboro,
+                null);
         } else if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
             var dir = cliString.Remove(0, "cd".Length).Trim();
             if (Directory.Exists(dir)) {
@@ -121,7 +127,7 @@ unsafe partial class App {
         return false;
     }
 
-    Thread StartWinUI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
+    public Thread StartWinUI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
         Color bgColor, Plot2D<T>.KeyDown onKeyDown = null, Action onDone = null, Icon hIcon = null,
         Size? size = null)
         where T : class {

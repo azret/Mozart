@@ -8,8 +8,8 @@
     using Microsoft.Win32;
 
     public interface IPlot2DController {
-        void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
-        void OnWinShow(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
+        void WM_WINMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
+        void WM_SHOWWINDOW(IntPtr hWnd, IntPtr wParam, IntPtr lParam);
     }
 
     public class Plot2D {
@@ -67,7 +67,7 @@
                     OnPaint(_onDrawFrame, _getFrame, 1, hWnd);
                     return 0;
                 case WM.SHOWWINDOW:
-                    _controller?.OnWinShow(hWnd, wParam, lParam);
+                    _controller?.WM_SHOWWINDOW(hWnd, wParam, lParam);
                     break;
                 case WM.DESTROY:
                     Dispose();
@@ -252,7 +252,7 @@
         private unsafe void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
             User32.GetClientRect(hWnd, out RECT lprctw3);
             User32.InvalidateRect(hWnd, ref lprctw3, false);
-            _controller?.OnWinMM(hWnd, wParam, lParam);
+            _controller?.WM_WINMM(hWnd, wParam, lParam);
         }
 
         public void Invalidate() {

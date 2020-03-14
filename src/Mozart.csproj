@@ -69,7 +69,7 @@
     <Compile Include="App.cs" />
     <Compile Include="include\Wav\dB.cs" />
     <Compile Include="include\Wav\Scale.cs" />
-    <Compile Include="Sound\Math.cs" />
+    <Compile Include="Sound\Tools.cs" />
     <Compile Include="include\Wav\Frequency.cs" />
     <Compile Include="Sound\Ranges.cs" />
     <Compile Include="include\Microsoft.Win32\Mic32.cs" />
