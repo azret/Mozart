@@ -113,7 +113,7 @@ unsafe partial class App {
                 wav.Hz,
                 1024));
             app.StartWinUI<System.Audio.IStream>(null,
-                Curves.DrawFourierTransform, () => wav, "Fast Fourier Transform",
+                Curves.DrawCurves, () => wav, "Fast Fourier Transform",
                 Color.Gainsboro);
         } else if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
             var dir = cliString.Remove(0, "cd".Length).Trim();

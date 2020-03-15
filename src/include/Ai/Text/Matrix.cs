@@ -56,8 +56,9 @@ namespace System.Collections {
                     Diagnostics.Debug.Assert(row.Id.Equals(key));
                     return row;
                 } else {
-                    T pre = Interlocked.CompareExchange(ref _data[index],
-                                    row = _factory(key, hashCode), null);
+                    T pre = Interlocked.CompareExchange(
+                        ref _data[index],
+                        row = _factory(key, hashCode), null);
                     if (pre != null) {
                         continue;
                     }

@@ -130,6 +130,8 @@ namespace Microsoft {
             [DllImport("user32.dll")]
             public static extern void PostMessage(IntPtr hWnd, WM msg, IntPtr lParam, IntPtr wParam);
             [DllImport("user32.dll")]
+            public static extern void SendMessage(IntPtr hWnd, WM msg, IntPtr lParam, IntPtr wParam);
+            [DllImport("user32.dll")]
             public static extern void PostThreadMessageA(int dwThreadId, WM msg, IntPtr lParam, IntPtr wParam);
             [DllImport("user32.dll")]
             public static extern IntPtr LoadIcon(IntPtr hInstance, string lpIconName);

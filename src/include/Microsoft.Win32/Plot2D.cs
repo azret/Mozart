@@ -50,6 +50,8 @@
                 return User32.DefWindowProc(hWnd, (WM)msg, wParam, lParam);
             }
             switch ((WM)msg) {
+                case WM.CREATE:
+                    break;
                 case WM.WINMM:
                     OnWinMM(hWnd, wParam, lParam);
                     break;
@@ -79,12 +81,13 @@
         }
         Color _bgColor;
         WndProc lpfnWndProcPtr;
-        readonly GCHandle lpfnWndProcGCHandle;
         public class ClassTemplate {
             internal Icon hIcon;
-            internal string szName = "WNDCLASSEX_PLOT2D";
+            internal string szName = "WNDCLASSEX_PLOT2D_" + Guid.NewGuid().ToString("N");
             internal WNDCLASSEX _lpwcx;
-            internal WndProc lpfnDefWndProcPtr = new WndProc(User32.DefWindowProc);
+            internal WndProc lpfnDefWndProcPtr = new WndProc(
+                (IntPtr hWnd, WM msg, IntPtr wParam, IntPtr lParam) =>
+                    User32.DefWindowProc(hWnd, msg, wParam, lParam));
         }
         IPlot2DController _controller;
         ClassTemplate _ClassTemplate;
@@ -139,10 +142,10 @@
                 throw new Win32Exception(Marshal.GetLastWin32Error());
             }
             lpfnWndProcPtr = new WndProc(UserWndProc);
-            lpfnWndProcGCHandle = GCHandle.Alloc(lpfnWndProcPtr, GCHandleType.Normal);
             User32.SetWindowLongPtr(hWnd,
                 (int)User32.WindowLongFlags.GWL_WNDPROC,
                 lpfnWndProcPtr);
+            User32.SendMessage(hWnd, WM.SETICON, IntPtr.Zero, _ClassTemplate._lpwcx.hIcon);
             hTimer = new Timer((state) => {
                 User32.GetClientRect(hWnd, out RECT lprctw);
                 User32.InvalidateRect(hWnd, ref lprctw, false);
@@ -156,7 +159,6 @@
                 User32.DestroyWindow(hWnd);
             }
             hWnd = IntPtr.Zero;
-            lpfnWndProcGCHandle.Free();
             lpfnWndProcPtr = null;
             //hSurface2D?.Dispose();
         }

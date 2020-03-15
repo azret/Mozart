@@ -8,123 +8,11 @@ unsafe partial class Curves {
     public static void DrawCurves(Graphics g, RectangleF r, float t, IStream s) {
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
         g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-
         DrawPaper(g, r);
-        // DrawFunction(g, r, (i, cc) => (float)(Math.Sin(i / (float)(cc) * 2 * Math.PI)), Brushes.Orange);
-        // DrawFunction(g, r, (i, cc) => (float)(i / (float)(cc)), Brushes.Red);
         DrawFunction(g, r, Envelopes.Welch, Brushes.Blue);
         DrawFunction(g, r, Envelopes.Hann, Brushes.Red);
         DrawFunction(g, r, Envelopes.Parabola, Brushes.Green);
         DrawFunction(g, r, Envelopes.Harris, Brushes.Orange);
-    }
-
-    static void DrawCurve(Graphics g, RectangleF clientRect, Color color,
-        float Xmin, float Xmax, float Xstep, Func<float, float> F, float width = 1f) {
-
-        var path = new System.Drawing.Drawing2D.GraphicsPath();
-
-        var Curve = new List<PointF>();
-
-        int M = (int)clientRect.Height / 2;
-
-        for (float i = Xmin; i <= Xmax; i += Xstep) {
-            var ampl = F(i);
-            if (ampl < -1) ampl = -1;
-            if (ampl > 1) ampl = 1;
-            if (ampl < -1 || ampl > +1) {
-                throw new IndexOutOfRangeException();
-            }
-            float x;
-            x = Surface2D.linf(i, Xmax - Xmin, clientRect.Width);
-            float y;
-            y = Surface2D.linf(-(float)ampl, 1, M) + M;
-            Curve.Add(new PointF(x, y));
-        }
-
-        path.AddCurve(Curve.ToArray());
-
-        var pen = new Pen(color, width);
-
-        g.DrawPath(pen, path);
-
-        path.Dispose();
-    }
-
-    public static void DrawFourierTransform(Graphics Canvas, RectangleF fill, float phase, IStream Source) {
-        float hz = Source?.Hz ?? 0;
-
-        var X = Source?.Peek();
-
-        int samples = Source != null ?
-            X.Length
-            : 0;
-
-        double h = samples != 0
-            ? hz / (double)samples
-            : 0;
-
-        var duration = hz != 0
-             ? Math.Round((double)samples / hz, 4)
-             : 0;
-
-        if (X == null) return;
-
-        DrawCurve(Canvas, fill, Color.Black, X, 3f);
-
-        Tools.Envelope(X);
-
-        var fft = Complex.FFT(X);
-
-        DrawBars(Color.Black,
-            Canvas, fill, fft, (float)System.Math.E, fft.Length / 7);
-
-        Tools.Clean(fft, hz);
-
-        DrawBars(Color.DarkRed,
-            Canvas, fill, fft, -(float)System.Math.E, fft.Length / 7);
-
-        X = Complex.InverseFFT(fft);
-
-        DrawCurve(Canvas, fill, Color.DarkRed, X, 2f);
-    }
-
-    public static void DrawPeaks(Graphics g, RectangleF clientRect, float phase, IStream Source) {
-        DrawPaper(g, clientRect);
-
-        phase = Source?.Phase ?? 0;
-
-        float hz = Source?.Hz ?? 0;
-
-        float[] X =
-            Source?.Peek();
-
-        X = Tools.Sine(440, hz, 1024);
-
-        if (X == null) return;
-
-        Tools.Envelope(X);
-
-        DrawCurve(g, clientRect, Color.LightGray, X, 2f);
-
-        var fft = Complex.FFT(X);
-
-        Tools.Clean(fft, hz);
-
-        X = Complex.InverseFFT(fft);
-
-        Tools.Envelope(X);
-
-        var peaks = Tools.Peaks(X);
-
-        DrawCurve(g, clientRect, Color.DarkRed, peaks, 2f);
-
-        string s = $"{phase:n4}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.DarkGray, clientRect.Right - 8 - sz.Width,
-                 8);
-        }
     }
 
     private static void DrawPaper(Graphics g,
@@ -164,7 +52,7 @@ unsafe partial class Curves {
             var dots = new List<PointF>();
             int cc = 1024;
             var pen = new Pen(brush, 2f);
-            for (int i = 0; i < cc + 1; i++) {
+            for (int i = 0; i < cc; i++) {
                 var ampl = F(i, cc) * 0.997;
                 if (ampl < -1 || ampl > +1) {
                     throw new IndexOutOfRangeException();
@@ -183,6 +71,67 @@ unsafe partial class Curves {
             pen.Dispose();
         }
         g.PixelOffsetMode = PixelOffsetMode;
+    }
+
+    public static void DrawPeaks(Graphics g,
+        RectangleF r,
+        float phase,
+        IStream Source) {
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        DrawPaper(g, r);
+        phase = Source?.Phase ?? 0;
+        float hz = Source?.Hz ?? 0;
+        float[] X =
+            Source?.Peek();
+        if (X == null) return;
+        DrawFunction(g, r, (i, cc) => X[i * X.Length / cc], Brushes.Red);
+        string s = $"{phase:n4}s";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
+                 8);
+        }
+    }
+
+#if x
+    public static void DrawFourierTransform(Graphics Canvas, RectangleF fill, float phase, IStream Source) {
+        float hz = Source?.Hz ?? 0;
+
+        var X = Source?.Peek();
+
+        int samples = Source != null ?
+            X.Length
+            : 0;
+
+        double h = samples != 0
+            ? hz / (double)samples
+            : 0;
+
+        var duration = hz != 0
+             ? Math.Round((double)samples / hz, 4)
+             : 0;
+
+        if (X == null) return;
+
+        DrawCurve(Canvas, fill, Color.Black, X, 3f);
+
+        Tools.Envelope(X);
+
+        var fft = Complex.FFT(X);
+
+        DrawBars(Color.Black,
+            Canvas, fill, fft, (float)System.Math.E, fft.Length / 7);
+
+        Tools.Clean(fft, hz);
+
+        DrawBars(Color.DarkRed,
+            Canvas, fill, fft, -(float)System.Math.E, fft.Length / 7);
+
+        X = Complex.InverseFFT(fft);
+
+        DrawCurve(Canvas, fill, Color.DarkRed, X, 2f);
     }
 
     private static void DrawDots(Graphics g,
@@ -375,4 +324,5 @@ unsafe partial class Curves {
 
         path.Dispose();
     }
+#endif
 }
