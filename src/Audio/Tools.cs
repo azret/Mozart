@@ -22,7 +22,7 @@ namespace System.Audio {
             var samples = X.Length;
             for (int s = 0; s < samples; s++) {
                 X[s] = X[s] 
-                    * (float)Shapes.Hann(s, samples);
+                    * (float)Envelopes.Hann(s, samples);
             }
         }
         public static float[] Peaks(float[] X) {

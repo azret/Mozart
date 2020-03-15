@@ -10,9 +10,12 @@ unsafe partial class Curves {
         g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
 
         DrawPaper(g, r);
-        DrawFunction(g, r, (i, cc) => (float)(Math.Sin(i / (float)(cc) * 2 * Math.PI)), Brushes.DarkOrange);
-        DrawFunction(g, r, (i, cc) => (float)(i / (float)(cc)), Brushes.DarkRed);
-        DrawFunction(g, r, Shapes.Hann, Brushes.DarkGreen);
+        // DrawFunction(g, r, (i, cc) => (float)(Math.Sin(i / (float)(cc) * 2 * Math.PI)), Brushes.Orange);
+        // DrawFunction(g, r, (i, cc) => (float)(i / (float)(cc)), Brushes.Red);
+        DrawFunction(g, r, Envelopes.Welch, Brushes.Blue);
+        DrawFunction(g, r, Envelopes.Hann, Brushes.Red);
+        DrawFunction(g, r, Envelopes.Parabola, Brushes.Green);
+        DrawFunction(g, r, Envelopes.Harris, Brushes.Orange);
     }
 
     static void DrawCurve(Graphics g, RectangleF clientRect, Color color,
@@ -162,9 +165,7 @@ unsafe partial class Curves {
             int cc = 1024;
             var pen = new Pen(brush, 2f);
             for (int i = 0; i < cc + 1; i++) {
-                var ampl = Tanh.f(F(i, cc));
-                if (ampl < -1) ampl = -1;
-                if (ampl > 1) ampl = 1;
+                var ampl = F(i, cc) * 0.997;
                 if (ampl < -1 || ampl > +1) {
                     throw new IndexOutOfRangeException();
                 }

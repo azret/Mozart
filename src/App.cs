@@ -103,7 +103,7 @@ unsafe partial class App {
                 IsTerminated);
         } else if (cliString.StartsWith("--curves", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
             app.StartWinUI<System.Audio.IStream>(null,
-                Curves.DrawCurves, () => null, "Curves",
+                Curves.DrawCurves, () => null, "Envelopes",
                 Color.White,
                 Resources.Oxygen,
                 new Size(623, 400));

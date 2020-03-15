@@ -54,6 +54,7 @@
     <Compile Include="include\Ai\Text\Set.cs" />
     <Compile Include="include\Ai\Text\Vector.cs" />
     <Compile Include="include\Ai\Text\Word.cs" />
+    <Compile Include="include\Math\Envelopes.cs" />
     <Compile Include="include\System.Text\Orthography.cs" />
     <Compile Include="include\System.Text\Text.cs" />
     <Compile Include="include\Wav\TimeSpan.cs" />
@@ -80,7 +81,6 @@
     <Compile Include="include\Math\Complex.cs" />
     <Compile Include="include\Math\IFunc.cs" />
     <Compile Include="include\Math\Random.cs" />
-    <Compile Include="include\Math\Shapes.cs" />
     <Compile Include="include\Math\SigF.cs" />
     <Compile Include="include\Math\Sigmoid.cs" />
     <Compile Include="include\Math\SigQ.cs" />
