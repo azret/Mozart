@@ -31,6 +31,9 @@
         public static int linear(float val, float from, float to) {
             return (int)(val * to / from);
         }
+        public static float linf(float val, float from, float to) {
+            return (val * to / from);
+        }
         public struct Quantum {
             const float ALIGN = 4.0f;
             public readonly int Value;

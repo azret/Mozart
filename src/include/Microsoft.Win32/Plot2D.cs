@@ -32,7 +32,7 @@
             IDI_ERROR = IDI_HAND,
             IDI_INFORMATION = IDI_ASTERISK,
         }
-        Surface2D hSurface2D;
+        // Surface2D hSurface2D;
         public IntPtr hWnd;
         Timer hTimer;
         long _startTime = 0;
@@ -158,7 +158,7 @@
             hWnd = IntPtr.Zero;
             lpfnWndProcGCHandle.Free();
             lpfnWndProcPtr = null;
-            hSurface2D?.Dispose();
+            //hSurface2D?.Dispose();
         }
         void OnPaint(DrawFrame onDrawFrame, Func<T> userState, float scale, IntPtr hWnd) {
             IntPtr hdc = User32.BeginPaint(hWnd, out PAINTSTRUCT ps);
@@ -166,11 +166,11 @@
                 out RECT lprct);
             RECT Membitrect = new RECT(0, 0, (int)((lprct.Right - lprct.Left) * scale),
                 (int)((lprct.Bottom - lprct.Top) * scale));
-            if (hSurface2D == null || hSurface2D.Width != new Surface2D.Quantum(Membitrect.Right - Membitrect.Left).Value
-                 || hSurface2D.Height != new Surface2D.Quantum(Membitrect.Bottom - Membitrect.Top).Value) {
-                Interlocked.Exchange(ref hSurface2D, new Surface2D(new Surface2D.Quantum(Membitrect.Right - Membitrect.Left),
-                    new Surface2D.Quantum(Membitrect.Bottom - Membitrect.Top), _bgColor))?.Dispose();
-            }
+            // if (hSurface2D == null || hSurface2D.Width != new Surface2D.Quantum(Membitrect.Right - Membitrect.Left).Value
+            //      || hSurface2D.Height != new Surface2D.Quantum(Membitrect.Bottom - Membitrect.Top).Value) {
+            //     Interlocked.Exchange(ref hSurface2D, new Surface2D(new Surface2D.Quantum(Membitrect.Right - Membitrect.Left),
+            //         new Surface2D.Quantum(Membitrect.Bottom - Membitrect.Top), _bgColor))?.Dispose();
+            // }
             IntPtr hMemDC = User32.CreateCompatibleDC(hdc);
             IntPtr hMemBitmap = User32.CreateCompatibleBitmap(hdc,
                 Membitrect.Right - Membitrect.Left,

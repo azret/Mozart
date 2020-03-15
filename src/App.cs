@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using Microsoft.Win32;
 using Microsoft.Win32.Plot2D;
+using Mozart.Properties;
 
 unsafe partial class App {
     public string CurrentDirectory {
@@ -14,10 +15,12 @@ unsafe partial class App {
     }
 
     static void Main() {
-        runCli(new App());
+        RunCli(new App());
     }
 
-    public static void runCli(App app) {
+    #region Cli
+
+    public static void RunCli(App app) {
         var HasCtrlBreak = false;
         Console.CancelKeyPress += OnCancelKey;
         try {
@@ -33,7 +36,7 @@ unsafe partial class App {
             cliScript
                 = cliScript.Trim();
             if (!string.IsNullOrWhiteSpace(cliScript)) {
-                HasCtrlBreak = Exec(
+                HasCtrlBreak = ExecCli(
                     app,
                     cliScript,
                     () => HasCtrlBreak);
@@ -48,7 +51,7 @@ unsafe partial class App {
                     continue;
                 }
                 try {
-                    HasCtrlBreak = Exec(
+                    HasCtrlBreak = ExecCli(
                         app,
                         cliScript,
                         () => HasCtrlBreak);
@@ -65,7 +68,7 @@ unsafe partial class App {
         }
     }
 
-    static bool Exec(
+    static bool ExecCli(
             App app,
             string cliString,
             Func<bool> IsTerminated) {
@@ -87,7 +90,7 @@ unsafe partial class App {
                     Console.WriteLine(loss);
                 },
                 HasCtrlBreak: IsTerminated);
-        } else if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase) 
+        } else if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase)
                     || cliString.StartsWith("cbow", StringComparison.OrdinalIgnoreCase)) {
             return System.Ai.CBOW.Train(
                 app.CurrentDirectory,
@@ -98,17 +101,20 @@ unsafe partial class App {
                 app,
                 cliString,
                 IsTerminated);
+        } else if (cliString.StartsWith("--curves", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
+            app.StartWinUI<System.Audio.IStream>(null,
+                Curves.DrawCurves, () => null, "Curves",
+                Color.White,
+                Resources.Oxygen,
+                new Size(623, 400));
         } else if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
             var wav = new System.Audio.Stream();
-            var X = System.Audio.Tools.Sine(440,
+            wav.Push(System.Audio.Tools.Sine(440,
                 wav.Hz,
-                1024);
-            wav.Push(X);
-            app.UnMute();
+                1024));
             app.StartWinUI<System.Audio.IStream>(null,
                 Curves.DrawFourierTransform, () => wav, "Fast Fourier Transform",
-                Color.Gainsboro,
-                null);
+                Color.Gainsboro);
         } else if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
             var dir = cliString.Remove(0, "cd".Length).Trim();
             if (Directory.Exists(dir)) {
@@ -126,6 +132,10 @@ unsafe partial class App {
         }
         return false;
     }
+
+    #endregion
+
+    #region WinUI
 
     public Thread StartWinUI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
         Color bgColor, Icon hIcon = null, Size? size = null)
@@ -161,8 +171,6 @@ unsafe partial class App {
         t.Start();
         return t;
     }
-
-    #region WinUI Events
 
     object _WinUILock = new object();
 

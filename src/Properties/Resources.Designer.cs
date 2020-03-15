@@ -83,6 +83,16 @@ namespace Mozart.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
         /// </summary>
+        internal static System.Drawing.Icon Oxygen {
+            get {
+                object obj = ResourceManager.GetObject("Oxygen", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Icon similar to (Icon).
+        /// </summary>
         internal static System.Drawing.Icon Record {
             get {
                 object obj = ResourceManager.GetObject("Record", resourceCulture);
