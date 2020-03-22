@@ -26,7 +26,35 @@ namespace System.Audio {
                     * (float)Envelopes.Hann(s, samples);
             }
         }
-        public static float[] Peaks(float[] X) {
+
+        public static bool[] Peaks(Complex[] X) {
+            bool[] peaks = new bool[X.Length];
+            bool[] troughs = new bool[X.Length];
+            for (int i = 0; i < X.Length; i++) {
+                if (i > 0 && i < X.Length - 1) {
+                    if (X[i - 1].Magnitude < X[i].Magnitude) {
+                        peaks[i - 1] = false;
+                        peaks[i] = true;
+                    } else if (X[i - 1].Magnitude > X[i].Magnitude) {
+                        troughs[i - 1] = false;
+                        troughs[i] = true;
+                    } else if (X[i - 1].Magnitude == X[i].Magnitude) {
+                        peaks[i] = true;
+                        troughs[i] = true;
+                    }
+                } else {
+                    peaks[i] = true;
+                    troughs[i] = true;
+                }
+            }
+            float[] Y = new float[X.Length];
+            for (int i = 0; i < peaks.Length; i++) {
+                peaks[i] |= troughs[i];
+            }
+            return peaks;
+        }
+
+        public static bool[] Peaks(float[] X) {
             bool[] peaks = new bool[X.Length];
             bool[] troughs = new bool[X.Length];
             for (int i = 0; i < X.Length; i++) {
@@ -46,20 +74,14 @@ namespace System.Audio {
                     troughs[i] = true;
                 }
             }
-            int cc = 0;
             float[] Y = new float[X.Length];
-            for (int i = 0; i < X.Length; i++) {
-                if (peaks[i] || troughs[i]) {
-                    if (cc >= Y.Length) {
-                        Array.Resize(ref Y, (int)((Y.Length + 7) * 1.75));
-                    }
-                    Y[cc++] = X[i];
-                }
+            for (int i = 0; i < peaks.Length; i++) {
+                peaks[i] |= troughs[i];
             }
-            Array.Resize(ref Y, cc);
-            return Y;
+            return peaks;
         }
-        public static void Clean(Complex[] fft, float hz) {
+
+        public static void CleanInPlace(Complex[] fft, float hz) {
             var samples = fft.Length;
             double h = hz
                 / (double)samples;
@@ -69,8 +91,8 @@ namespace System.Audio {
                 var dB = System.Audio.dB.FromAmplitude(vol);
                 bool filterOut =
                     !Ranges.IsInRange(f, dB);
+                var n = samples - s;
                 if (filterOut) {
-                    var n = samples - s;
                     fft[s].Scale(0f);
                     if (s > 0 && n > s && n >= 0
                             && n < samples) {
@@ -79,6 +101,7 @@ namespace System.Audio {
                 }
             }
         }
+
         // public static IEnumerable<Frequency> Translate(Complex[] fft, float hz) {
         //     int samples = fft.Length;
         //     var F = new List<Frequency>();

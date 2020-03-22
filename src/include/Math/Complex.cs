@@ -30,7 +30,7 @@ namespace System {
             }
         }
         public void Scale(float factor) {
-            if (factor < -1 ||  factor > 1) {
+            if (factor < -1 ||  factor > Math.E) {
                 throw new ArgumentOutOfRangeException();
             }
             double vol = Magnitude,

@@ -126,7 +126,7 @@ namespace Microsoft.WinMM {
         float IStream.Hz => _wfx.nSamplesPerSec;
 
         public float[] Read() {
-            return Tools.Sine(44100, 1024, 440, 330, 230, 270);
+            // return Tools.Sine(44100, 1024, 440, 330, 230, 270);
             return CH1();
         }
 

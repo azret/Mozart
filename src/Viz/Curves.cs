@@ -44,6 +44,7 @@ unsafe partial class Curves {
         byte Xscale = 16,
         byte Yscale = 16,
         Func<int, float> GetAmplitude = null,
+        Func<int, bool> GetPeak = null,
         Brush brush = null) {
         var PixelOffsetMode = g.PixelOffsetMode;
         g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
@@ -53,25 +54,29 @@ unsafe partial class Curves {
         for (int x = 0; x < r.Width; x += Xscale) {
             if (x % Xscale == 0) {
                 var ampl = GetAmplitude(i);
-                var h = ((int)((int)(r.Height / Yscale) / 2) * ampl) * Yscale;
-                var m = (int)((int)(r.Height / Yscale) / 2) * Yscale;
-                if (h > 0) {
-                    g.FillRectangle(brush,
-                        x, m - h, Xscale, h);
-                    g.DrawRectangle(pen,
-                        x, m - h, Xscale, h);
-                    g.FillEllipse(Brushes.Gray, x + (Xscale / 2) - 3,
-                        m - h - Yscale / 2 - 3, 7, 7);
-                    // g.FillRectangle(Pens.Gray.Brush,
-                    //     x + (Xscale / 2) - 1, m - h - 3, 3, h);
-                } else if (h < 0) {
-                    h *= -1;
-                    g.FillRectangle(brush,
-                        x, m, Xscale, h);
-                    g.DrawRectangle(pen,
-                        x, m, Xscale, h);
-                    g.FillEllipse(Brushes.Gray, x + (Xscale / 2) - 3,
-                        m + h + Yscale / 2 - 3, 7, 7);
+                if (Math.Abs(ampl) > 0.01) {
+                    var h = ((int)((int)(r.Height / Yscale) / 2) * ampl) * Yscale;
+                    var med = (int)((int)(r.Height / Yscale) / 2) * Yscale;
+                    if (h > 0) {
+                        g.FillRectangle(brush,
+                            x, med - h, Xscale, h);
+                        g.DrawRectangle(pen,
+                            x, med - h, Xscale, h);
+                        if (GetPeak(i)) {
+                            g.FillEllipse(Brushes.Gray, x + (Xscale / 2) - 3,
+                                med - h - Yscale / 2 - 3, 7, 7);
+                        }
+                    } else if (h < 0) {
+                        h *= -1;
+                        g.FillRectangle(brush,
+                            x, med, Xscale, h);
+                        g.DrawRectangle(pen,
+                            x, med, Xscale, h);
+                        if (GetPeak(i)) {
+                            g.FillEllipse(Brushes.Gray, x + (Xscale / 2) - 3,
+                                med + h + Yscale / 2 - 3, 7, 7);
+                        }
+                    }
                 }
                 i++;
             }
@@ -139,37 +144,58 @@ unsafe partial class Curves {
         RectangleF r,
         float phase,
         IStream Source) {
+        DrawPaper(g, r);
         phase = Source?.ElapsedTime ?? 0;
         float hz = Source?.Hz ?? 0;
         float[] X =
             Source?.Read();
         if (X == null) return;
         var fft = Complex.FFT(X);
-        int startBin = 0;
-        int endBin = 0;
-        DrawBars(g, r, 16, 16, (i) => {
-            if (i > endBin) {
-                endBin = i;
-            }
-            if (i >= 0 && i < fft.Length) {
-                return (2 * fft[i].Magnitude);
-            } else {
-                return 0f;
-            }
-        }, Brushes.MediumVioletRed);
-        DrawBars(g, r, 16, 16, (i) => {
-            if (i > endBin) {
-                endBin = i;
-            }
-            if (i >= 0 && i < fft.Length) {
-                return (-2 * fft[i].Magnitude);
-            } else {
-                return 0f;
-            }
-        }, Brushes.Violet);
+        var peaks = Tools.Peaks(fft);
+        int startBin = 0,
+                endBin = 0;
+        DrawBars(g, r, 16, 16,
+            (i) => {
+                if (i > endBin) {
+                    endBin = i;
+                }
+                if (i >= 0 && i < fft.Length) {
+                    return (2 * fft[i].Magnitude);
+                } else {
+                    return 0f;
+                }
+            },
+            (i) => {
+                if (i >= 0 && i < fft.Length) {
+                    return peaks[i];
+                } else {
+                    return false;
+                }
+            },
+            Brushes.MediumVioletRed);
 
-        DrawPaper(g, r);
-        //DrawFunction(g, r, (i, cc) => fft[i * (endBin + 1) / cc].Re, Brushes.Red);
+        Tools.CleanInPlace(fft, hz);
+        peaks = Tools.Peaks(fft);
+
+        DrawBars(g, r, 16, 16,
+            (i) => {
+                if (i > endBin) {
+                    endBin = i;
+                }
+                if (i >= 0 && i < fft.Length) {
+                    return (-2 * fft[i].Magnitude);
+                } else {
+                    return 0f;
+                }
+            },
+            (i) => {
+                if (i >= 0 && i < fft.Length) {
+                    return peaks[i];
+                } else {
+                    return false;
+                }
+            },
+            Brushes.PaleVioletRed);
         DrawLabels(
             g,
             r,
