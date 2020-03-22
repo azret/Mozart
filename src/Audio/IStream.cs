@@ -2,9 +2,9 @@
 
 namespace System.Audio {
     public interface IStream {
-        float Phase { get; }
+        float ElapsedTime { get; }
         float Hz { get; }
-        float[] Peek();
-        void Push(float[] X);
+        float[] Read();
+        void Write(float[] X);
     }
 }

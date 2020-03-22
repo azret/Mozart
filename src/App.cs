@@ -101,20 +101,12 @@ unsafe partial class App {
                 app,
                 cliString,
                 IsTerminated);
-        } else if (cliString.StartsWith("--curves", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
-            app.StartWinUI<System.Audio.IStream>(null,
-                Curves.DrawCurves, () => null, "Envelopes",
+        } else if (cliString.StartsWith("--curves", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("curves", StringComparison.OrdinalIgnoreCase)) {
+            app.StartWin32UI<System.Audio.IStream>(null,
+                Curves.DrawCurves, () => null, "Curves",
                 Color.White,
                 Resources.Oxygen,
                 new Size(623, 400));
-        } else if (cliString.StartsWith("--fft", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("fft", StringComparison.OrdinalIgnoreCase)) {
-            var wav = new System.Audio.Stream();
-            wav.Push(System.Audio.Tools.Sine(440,
-                wav.Hz,
-                1024));
-            app.StartWinUI<System.Audio.IStream>(null,
-                Curves.DrawCurves, () => wav, "Fast Fourier Transform",
-                Color.Gainsboro);
         } else if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
             var dir = cliString.Remove(0, "cd".Length).Trim();
             if (Directory.Exists(dir)) {
@@ -124,10 +116,8 @@ unsafe partial class App {
             Console.Clear();
         } else {
             string outputFileName = @"D:\Mozart\src\App.cbow";
-
             var Model = System.Ai.CBOW.LoadFromFile(outputFileName, System.Ai.CBOW.SIZE,
                     out string fmt, out int dims);
-
             System.Ai.CBOW.RunFullCosineSort(new CSharp(), Model, cliString, 32);
         }
         return false;
@@ -135,9 +125,9 @@ unsafe partial class App {
 
     #endregion
 
-    #region WinUI
+    #region Win32
 
-    public Thread StartWinUI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
+    public Thread StartWin32UI<T>(IPlot2DController controller, Plot2D<T>.DrawFrame onDrawFrame, Func<T> onGetFrame, string title,
         Color bgColor, Icon hIcon = null, Size? size = null)
         where T : class {
         Thread t = new Thread(() => {
@@ -148,7 +138,7 @@ unsafe partial class App {
                     onDrawFrame,
                     TimeSpan.FromMilliseconds(1000),
                     onGetFrame, bgColor, hIcon, size);
-                AddWinUIHandle(handl = hWnd.hWnd);
+                AddWinMMHandle(handl = hWnd.hWnd);
                 hWnd.Show();
                 while (User32.GetMessage(out MSG msg, hWnd.hWnd, 0, 0) != 0) {
                     User32.TranslateMessage(ref msg);
@@ -157,7 +147,7 @@ unsafe partial class App {
             } catch (Exception e) {
                 Console.Error?.WriteLine(e);
             } finally {
-                RemoveWinUIHandle(handl);
+                RemoveWinMMHandle(handl);
                 hWnd?.Dispose();
                 WinMM.PlaySound(null,
                         IntPtr.Zero,
@@ -172,12 +162,12 @@ unsafe partial class App {
         return t;
     }
 
-    object _WinUILock = new object();
+    object _WinMMLock = new object();
 
     private IntPtr[] _WinUIHandles;
 
-    public void AddWinUIHandle(IntPtr hWnd) {
-        lock (_WinUILock) {
+    public void AddWinMMHandle(IntPtr hWnd) {
+        lock (_WinMMLock) {
             if (_WinUIHandles == null) {
                 _WinUIHandles = new IntPtr[0];
             }
@@ -187,14 +177,14 @@ unsafe partial class App {
         }
     }
 
-    public void ClearWinUIHandles() {
-        lock (_WinUILock) {
+    public void ClearWinMMHandles() {
+        lock (_WinMMLock) {
             _WinUIHandles = null;
         }
     }
 
-    public void RemoveWinUIHandle(IntPtr hWnd) {
-        lock (_WinUILock) {
+    public void RemoveWinMMHandle(IntPtr hWnd) {
+        lock (_WinMMLock) {
             if (_WinUIHandles != null) {
                 for (int i = 0; i < _WinUIHandles.Length; i++) {
                     if (_WinUIHandles[i] == hWnd) {
@@ -205,8 +195,8 @@ unsafe partial class App {
         }
     }
 
-    public unsafe void PostWinUIMessage(Microsoft.WinMM.Mic32 hMic, IntPtr hWaveHeader) {
-        lock (_WinUILock) {
+    public unsafe void PostWinMMMessage(Microsoft.WinMM.Mic32 hMic, IntPtr hWaveHeader) {
+        lock (_WinMMLock) {
             if (_WinUIHandles == null) {
                 return;
             }

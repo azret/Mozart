@@ -11,9 +11,11 @@ unsafe partial class App {
 
     class MicWinUIController : IPlot2DController {
         Mic32 _hMic32;
+        string _title;
 
-        public MicWinUIController(Mic32 hMic32) {
+        public MicWinUIController(Mic32 hMic32, string title) {
             _hMic32 = hMic32;
+            _title = title;
         }
 
         public void WM_CLOSE(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
@@ -35,22 +37,22 @@ unsafe partial class App {
 
         public void WM_SHOWWINDOW(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
             if (hWnd != IntPtr.Zero) {
-                UpdateTitle(hWnd);
+                UpdateWindowTitle(hWnd);
             }
         }
 
         public void WM_WINMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
             if (lParam == IntPtr.Zero && hWnd != IntPtr.Zero
                 && wParam == _hMic32.Handle) {
-                UpdateTitle(hWnd);
+                UpdateWindowTitle(hWnd);
             }
         }
 
-        private void UpdateTitle(IntPtr hWnd) {
-            if (_hMic32?.IsMuted == true) {
-                Microsoft.Win32.User32.SetWindowText(hWnd, "Live Recording - OFF");
+        private void UpdateWindowTitle(IntPtr hWnd) {
+            if (_hMic32?.IsMuted != true) {
+                Microsoft.Win32.User32.SetWindowText(hWnd, _title + " (Mic)");
             } else {
-                Microsoft.Win32.User32.SetWindowText(hWnd, "Live Recording - ON");
+                Microsoft.Win32.User32.SetWindowText(hWnd, _title);
             }
         }
     }
@@ -65,13 +67,23 @@ unsafe partial class App {
         } else {
             throw new ArgumentException();
         }
+        bool fft = cliScript.Contains("fft");
         app.UnMute();
-        app.StartWinUI<IStream>(new MicWinUIController(app.hMic32),
-            Curves.DrawPeaks, () => app?.hMic32,
-            "Live Recording",
-            Color.White,
-            Mozart.Properties.Resources.Wave,
-            new Size(500, 400));
+        if (fft) {
+            app.StartWin32UI<IStream>(new MicWinUIController(app.hMic32, "FFT"),
+                Curves.DrawFFT, () => app?.hMic32,
+                "FFT",
+                Color.White,
+                Mozart.Properties.Resources.Bars,
+                new Size(500, 400));
+        } else {
+            app.StartWin32UI<IStream>(new MicWinUIController(app.hMic32, "Wave"),
+                Curves.DrawWave, () => app?.hMic32,
+                "Wave",
+                Color.White,
+                Mozart.Properties.Resources.Wave,
+                new Size(500, 400));
+        }
         return false;
     }
 
@@ -88,10 +100,8 @@ unsafe partial class App {
                 WinMM.Throw(
                     WinMM.waveInAddBuffer(hMic.Handle, hWaveHeader, Marshal.SizeOf(typeof(WaveHeader))),
                     WinMM.ErrorSource.WaveIn);
-                PostWinUIMessage(hMic, hWaveHeader);
-            } else {
-                PostWinUIMessage(hMic, hWaveHeader);
             }
+            PostWinMMMessage(hMic, hWaveHeader);
         });
         try {
             hMic32.Open(false);
@@ -115,11 +125,15 @@ namespace Microsoft.WinMM {
     public sealed partial class Mic32 : IStream {
         float IStream.Hz => _wfx.nSamplesPerSec;
 
-        public float[] Peek() {
+        public float[] Read() {
+            float h = (44100f / 1024f);
+            return Tools.Sine(
+                (0 * h) - (h / 2),
+                44100, 1024);
             return CH1();
         }
 
-        public void Push(float[] X) {
+        public void Write(float[] X) {
             CH1(X);
         }
     }

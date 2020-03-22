@@ -19,7 +19,7 @@
             return (Environment.TickCount - _startTime) * 0.001f;
         }
 
-        public float Phase => GetLocalTime();
+        public float ElapsedTime => GetLocalTime();
 
         Action<Mic32, IntPtr> _onReady;
 

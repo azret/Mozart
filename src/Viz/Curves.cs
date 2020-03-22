@@ -39,6 +39,39 @@ unsafe partial class Curves {
         g.PixelOffsetMode = PixelOffsetMode;
     }
 
+    private static void DrawBars(Graphics g,
+        RectangleF r,
+        byte Xscale = 16,
+        byte Yscale = 16,
+        Func<int, float> GetAmplitude = null,
+        Brush brush = null) {
+        var PixelOffsetMode = g.PixelOffsetMode;
+        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+        var pen = Pens.LightGray;
+        int i = 0;
+        for (int x = 0; x < r.Width; x += Xscale) {
+            if (x % Xscale == 0) {
+                var ampl = GetAmplitude(i);
+                var h = ((int)((int)(r.Height / Yscale) / 2) * ampl) * Yscale;
+                var m = (int)((int)(r.Height / Yscale) / 2) * Yscale;
+                if (h > 0) {
+                    g.FillRectangle(brush,
+                        x, m - h, Xscale, h);
+                    g.DrawRectangle(pen,
+                        x, m - h, Xscale, h);
+                } else if (h < 0) {
+                    h *= -1;
+                    g.FillRectangle(brush,
+                        x, m, Xscale, h);
+                    g.DrawRectangle(pen,
+                        x, m, Xscale, h);
+                }
+                i++;
+            }
+        }
+        g.PixelOffsetMode = PixelOffsetMode;
+    }
+
     private static void DrawFunction(Graphics g,
         RectangleF r,
         Func<int, int, double> F,
@@ -73,25 +106,105 @@ unsafe partial class Curves {
         g.PixelOffsetMode = PixelOffsetMode;
     }
 
-    public static void DrawPeaks(Graphics g,
+    public static void DrawWave(Graphics g,
         RectangleF r,
         float phase,
         IStream Source) {
         g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
         g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
         DrawPaper(g, r);
-        phase = Source?.Phase ?? 0;
+        phase = Source?.ElapsedTime ?? 0;
         float hz = Source?.Hz ?? 0;
         float[] X =
-            Source?.Peek();
+            Source?.Read();
         if (X == null) return;
-        DrawFunction(g, r, (i, cc) => X[i * X.Length / cc], Brushes.Red);
+        DrawFunction(g, r, (i, cc) => Envelopes.Hann(i, cc) * X[i * X.Length / cc], Brushes.Red);
         string s = $"{phase:n4}s";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
                 s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
                  8);
+        }
+    }
+
+    public static void DrawFFT(Graphics g,
+        RectangleF r,
+        float phase,
+        IStream Source) {
+        phase = Source?.ElapsedTime ?? 0;
+        float hz = Source?.Hz ?? 0;
+        float[] X =
+            Source?.Read();
+        if (X == null) return;
+
+        var fft = Complex.FFT(X); 
+
+        int max = 0;
+
+        bool InRange(int i) {
+            return i >= 0 && i < (fft.Length / 2);
+        }
+
+        DrawBars(g, r, 16, 16, (i) => {
+            if (InRange(i)) {
+                if (i > max) {
+                    max = i;
+                }
+                return (2 * fft[i].Magnitude) * (0.75f);
+            } else {
+                return 0f;
+            }
+        }, Brushes.DarkCyan);
+
+        DrawBars(g, r, 16, 16, (i) => {
+            if (InRange(i)) {
+                if (i > max) {
+                    max = i;
+                }
+                return (2 * -fft[i].Magnitude) * (0.75f);
+            } else {
+                return 0f;
+            }
+        }, Brushes.LightCoral);
+
+        DrawPaper(g, r);
+
+        string s = $"{phase:n4}s";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
+                 8);
+        }
+        s = $"{fft.Length} @ {hz:n0}Hz";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Left + 8,
+                 8);
+        }
+        // Max visible frequency (Hz)
+        s = $"{max * (hz / fft.Length):n0}Hz";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
+                  r.Bottom - 8 - sz.Height);
+        }
+        s = $"{(hz / fft.Length):n0}Hz";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Left + 8,
+                  r.Bottom - 8 - sz.Height);
+        }
+        s = $"{(max / 2) * (hz / fft.Length):n0}Hz";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Left + r.Width / 2 - sz.Width / 2,
+                  r.Bottom - 8 - sz.Height);
         }
     }
 

@@ -32,7 +32,6 @@
             IDI_ERROR = IDI_HAND,
             IDI_INFORMATION = IDI_ASTERISK,
         }
-        // Surface2D hSurface2D;
         public IntPtr hWnd;
         Timer hTimer;
         long _startTime = 0;
@@ -249,13 +248,11 @@
             User32.DeleteDC(hMemDC);
             User32.EndPaint(hWnd, ref ps);
         }
-
         private unsafe void OnWinMM(IntPtr hWnd, IntPtr wParam, IntPtr lParam) {
             User32.GetClientRect(hWnd, out RECT lprctw3);
             User32.InvalidateRect(hWnd, ref lprctw3, false);
             _controller?.WM_WINMM(hWnd, wParam, lParam);
         }
-
         public void Invalidate() {
             if (hWnd == IntPtr.Zero) {
                 throw new ObjectDisposedException(GetType().Name);

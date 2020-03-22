@@ -4,40 +4,39 @@ namespace System.Audio {
     public class Stream : IStream {
         object _lock = new object();
 
-        long _startTime = 0;
+        long _tickCount = 0;
 
-        public float GetLocalTime() {
-            if (_startTime == 0) { _startTime = Environment.TickCount; }
-            return (Environment.TickCount - _startTime) * 0.001f;
+        public float GetTickCount() {
+            if (_tickCount == 0) { _tickCount = Environment.TickCount; }
+            return (Environment.TickCount - _tickCount) * 0.001f;
         }
 
-        public float Phase {
+        public float ElapsedTime {
             get {
-                return GetLocalTime();
+                return GetTickCount();
             }
         }
 
         public float Hz => 44100;
 
-        float[] _peek;
+        float[] _data;
 
-        public void Push(float[] X) {
+        public void Write(float[] X) {
             lock (_lock) {
                 var last = X != null
                     ? (float[])X.Clone()
                     : null;
-                _peek = last;
+                _data = last;
             }
         }
 
-        public float[] Peek() {
+        public float[] Read() {
             lock (_lock) {
-                var last = _peek != null
-                    ? (float[])_peek.Clone()
+                var last = _data != null
+                    ? (float[])_data.Clone()
                     : null;
                 return last;
             }
         }
     }
 }
-

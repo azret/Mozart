@@ -9,11 +9,6 @@ namespace System.Audio {
             for (int s = 0; s < samples; s++) {
                 var ampl =
                     System.Math.Sin(f * 2d * System.Math.PI * s * (1d / hz));
-                ampl +=
-                    System.Math.Sin(f * System.Math.Sqrt(2) * 2d * System.Math.PI * s * (1d / hz));
-                ampl +=
-                    System.Math.Sin(f + f * System.Math.Sqrt(2) * 2d * System.Math.PI * s * (1d / hz));
-                ampl /= 3f;
                 X[s] = (float)ampl;
             }
             return X;
