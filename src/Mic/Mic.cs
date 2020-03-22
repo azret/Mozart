@@ -70,16 +70,16 @@ unsafe partial class App {
         bool fft = cliScript.Contains("fft");
         app.UnMute();
         if (fft) {
-            app.StartWin32UI<IStream>(new MicWinUIController(app.hMic32, "FFT"),
+            app.StartWin32UI<IStream>(new MicWinUIController(app.hMic32, "Fast Fourier Transform"),
                 Curves.DrawFFT, () => app?.hMic32,
-                "FFT",
+                "Fast Fourier Transform",
                 Color.White,
-                Mozart.Properties.Resources.Bars,
-                new Size(500, 400));
+                Mozart.Properties.Resources.Oxygen,
+                new Size(700, 400));
         } else {
-            app.StartWin32UI<IStream>(new MicWinUIController(app.hMic32, "Wave"),
+            app.StartWin32UI<IStream>(new MicWinUIController(app.hMic32, "Direct Signal"),
                 Curves.DrawWave, () => app?.hMic32,
-                "Wave",
+                "Direct Signal",
                 Color.White,
                 Mozart.Properties.Resources.Wave,
                 new Size(500, 400));
@@ -126,10 +126,7 @@ namespace Microsoft.WinMM {
         float IStream.Hz => _wfx.nSamplesPerSec;
 
         public float[] Read() {
-            float h = (44100f / 1024f);
-            return Tools.Sine(
-                (0 * h) - (h / 2),
-                44100, 1024);
+            return Tools.Sine(44100, 1024, 440, 330, 230, 270);
             return CH1();
         }
 

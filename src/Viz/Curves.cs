@@ -23,14 +23,14 @@ unsafe partial class Curves {
         g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
         var pen = Pens.LightGray;
         for (int x = 0; x < r.Width; x += Xscale) {
-            if (x > 0 && x % Xscale == 0) {
+            if (x % Xscale == 0) {
                 g.DrawLine(pen,
                     new PointF(x, 0),
                     new PointF(x, r.Height));
             }
         }
         for (int y = 0; y < r.Height; y += Yscale) {
-            if (y > 0 && y % Yscale == 0) {
+            if (y % Yscale == 0) {
                 g.DrawLine(pen,
                     new PointF(0, y),
                     new PointF(r.Width, y));
@@ -46,7 +46,8 @@ unsafe partial class Curves {
         Func<int, float> GetAmplitude = null,
         Brush brush = null) {
         var PixelOffsetMode = g.PixelOffsetMode;
-        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+        g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
         var pen = Pens.LightGray;
         int i = 0;
         for (int x = 0; x < r.Width; x += Xscale) {
@@ -59,12 +60,18 @@ unsafe partial class Curves {
                         x, m - h, Xscale, h);
                     g.DrawRectangle(pen,
                         x, m - h, Xscale, h);
+                    g.FillEllipse(Brushes.Gray, x + (Xscale / 2) - 3,
+                        m - h - Yscale / 2 - 3, 7, 7);
+                    // g.FillRectangle(Pens.Gray.Brush,
+                    //     x + (Xscale / 2) - 1, m - h - 3, 3, h);
                 } else if (h < 0) {
                     h *= -1;
                     g.FillRectangle(brush,
                         x, m, Xscale, h);
                     g.DrawRectangle(pen,
                         x, m, Xscale, h);
+                    g.FillEllipse(Brushes.Gray, x + (Xscale / 2) - 3,
+                        m + h + Yscale / 2 - 3, 7, 7);
                 }
                 i++;
             }
@@ -137,69 +144,70 @@ unsafe partial class Curves {
         float[] X =
             Source?.Read();
         if (X == null) return;
-
-        var fft = Complex.FFT(X); 
-
-        int max = 0;
-
-        bool InRange(int i) {
-            return i >= 0 && i < (fft.Length / 2);
-        }
-
+        var fft = Complex.FFT(X);
+        int startBin = 0;
+        int endBin = 0;
         DrawBars(g, r, 16, 16, (i) => {
-            if (InRange(i)) {
-                if (i > max) {
-                    max = i;
-                }
-                return (2 * fft[i].Magnitude) * (0.75f);
+            if (i > endBin) {
+                endBin = i;
+            }
+            if (i >= 0 && i < fft.Length) {
+                return (2 * fft[i].Magnitude);
             } else {
                 return 0f;
             }
-        }, Brushes.DarkCyan);
-
+        }, Brushes.MediumVioletRed);
         DrawBars(g, r, 16, 16, (i) => {
-            if (InRange(i)) {
-                if (i > max) {
-                    max = i;
-                }
-                return (2 * -fft[i].Magnitude) * (0.75f);
+            if (i > endBin) {
+                endBin = i;
+            }
+            if (i >= 0 && i < fft.Length) {
+                return (-2 * fft[i].Magnitude);
             } else {
                 return 0f;
             }
-        }, Brushes.LightCoral);
+        }, Brushes.Violet);
 
         DrawPaper(g, r);
+        //DrawFunction(g, r, (i, cc) => fft[i * (endBin + 1) / cc].Re, Brushes.Red);
+        DrawLabels(
+            g,
+            r,
+            phase,
+            hz, fft, startBin, endBin);
+    }
 
-        string s = $"{phase:n4}s";
+    static void DrawLabels(Graphics g, RectangleF r, float phase, float hz, Complex[] fft,
+        int startBin, int endBin) {
+        string s = $"{phase:n2}s";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
                 s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
                  8);
         }
-        s = $"{fft.Length} @ {hz:n0}Hz";
+        s = $"{fft.Length} at {hz}Hz";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
                 s, Plot2D.Font, Brushes.DarkGray, r.Left + 8,
                  8);
         }
-        // Max visible frequency (Hz)
-        s = $"{max * (hz / fft.Length):n0}Hz";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
-                  r.Bottom - 8 - sz.Height);
-        }
-        s = $"{(hz / fft.Length):n0}Hz";
+        s = $"{(startBin + 1) * (hz / fft.Length):n2}Hz";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
                 s, Plot2D.Font, Brushes.DarkGray, r.Left + 8,
                   r.Bottom - 8 - sz.Height);
         }
-        s = $"{(max / 2) * (hz / fft.Length):n0}Hz";
+        s = $"{(endBin + 1) * (hz / fft.Length):n2}Hz";
+        if (s != null) {
+            var sz = g.MeasureString(s, Plot2D.Font);
+            g.DrawString(
+                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
+                  r.Bottom - 8 - sz.Height);
+        }
+        s = $"{((endBin + 1) / 2) * (hz / fft.Length):n2}Hz";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
@@ -207,235 +215,4 @@ unsafe partial class Curves {
                   r.Bottom - 8 - sz.Height);
         }
     }
-
-#if x
-    public static void DrawFourierTransform(Graphics Canvas, RectangleF fill, float phase, IStream Source) {
-        float hz = Source?.Hz ?? 0;
-
-        var X = Source?.Peek();
-
-        int samples = Source != null ?
-            X.Length
-            : 0;
-
-        double h = samples != 0
-            ? hz / (double)samples
-            : 0;
-
-        var duration = hz != 0
-             ? Math.Round((double)samples / hz, 4)
-             : 0;
-
-        if (X == null) return;
-
-        DrawCurve(Canvas, fill, Color.Black, X, 3f);
-
-        Tools.Envelope(X);
-
-        var fft = Complex.FFT(X);
-
-        DrawBars(Color.Black,
-            Canvas, fill, fft, (float)System.Math.E, fft.Length / 7);
-
-        Tools.Clean(fft, hz);
-
-        DrawBars(Color.DarkRed,
-            Canvas, fill, fft, -(float)System.Math.E, fft.Length / 7);
-
-        X = Complex.InverseFFT(fft);
-
-        DrawCurve(Canvas, fill, Color.DarkRed, X, 2f);
-    }
-
-    private static void DrawDots(Graphics g,
-        RectangleF r,
-        Func<float, float> F = null,
-        byte Xscale = 1,
-        byte Yscale = 1) {
-        var PixelOffsetMode = g.PixelOffsetMode;
-        if (F != null) {
-            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-            var Points = new List<PointF>();
-            int cc = (int)r.Width / Xscale;
-            for (int i = 0; i < cc + 1; i++) {
-                var ampl = F(i / (float)cc);
-                if (ampl < -1) ampl = -1;
-                if (ampl > 1) ampl = 1;
-                if (ampl < -1 || ampl > +1) {
-                    throw new IndexOutOfRangeException();
-                }
-                float y;
-                int M = (int)r.Height / 2;
-                y = Surface2D.linf(-(float)ampl, 1, M) + M;
-                y = ((int)Math.Floor(y / Yscale)) * Yscale;
-                var x = (i) * Xscale;
-                Points.Add(new PointF(x, y));
-            }
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
-            for (int i = 0; i < Points.Count; i++) {
-                var p = Points[i];
-                var w = 5;
-                if (i > 0) {
-                    var p0 = Points[i - 1];
-                    path.AddLine(p0, p);
-                }
-                // path.AddEllipse(
-                //     p.X - (w / 2f),
-                //     p.Y - (w / 2f),
-                //     w,
-                //     w);
-            }
-            // g.FillPath(Pens.DarkRed.Brush, path);
-            g.DrawPath(Pens.Gray, path);
-            path.Dispose();
-            var Curve = new List<PointF>();
-            for (int i = 0; i < Points.Count; i++) {
-                var p = Points[i];
-                if (i > 0) {
-                    var p0 = Points[i - 1];
-                    if (p0.Y != p.Y) {
-                        Curve.Add(p);
-                    }
-                } else {
-                    Curve.Add(p);
-                }
-            }
-            g.DrawCurve(Pens.Orange, Curve.ToArray());
-        }
-
-        g.PixelOffsetMode = PixelOffsetMode;
-    }
-
-    static void DrawMic(Graphics g, RectangleF clientRect, float phase, IStream Source) {
-        phase = Source?.Phase ?? 0;
-
-        float hz = Source?.Hz ?? 0;
-        var X = Source?.Peek();
-        if (X == null) return;
-
-        var pen = Pens.LightGray;
-
-        for (int x = 0; x < clientRect.Width; x++) {
-            if (x > 0 && x % 13 == 0) {
-                g.DrawLine(pen,
-                    new PointF(x, 0),
-                    new PointF(x, clientRect.Height));
-            }
-        }
-        for (int y = 0; y < clientRect.Height; y++) {
-            if (y > 0 && y % 13 == 0) {
-                g.DrawLine(pen,
-                    new PointF(0, y),
-                    new PointF(clientRect.Width, y));
-            }
-        }
-
-        Tools.Envelope(X);
-
-        DrawCurve(g, clientRect, Color.Gray, X, 2f);
-
-        var fft = Complex.FFT(X);
-
-        Tools.Clean(fft, hz);
-
-        X = Complex.InverseFFT(fft);
-
-        DrawCurve(g, clientRect, Color.DarkRed, X, 2f);
-
-        string s = $"{phase:n4}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.LimeGreen, clientRect.Right - 8 - sz.Width,
-                 8);
-        }
-    }
-
-    static void DrawBars(Graphics g, RectangleF clientRect, float phase, IStream Source) {
-        float hz = Source?.Hz ?? 0;
-        var X = Source?.Peek();
-        if (X == null) return;
-        Tools.Envelope(X);
-        var fft = Complex.FFT(X);
-        DrawBars(Color.White,
-            g, clientRect, fft, (float)1, fft.Length / 2);
-        Tools.Clean(fft, hz);
-        DrawBars(Color.DarkRed,
-            g, clientRect, fft, -(float)1, fft.Length / 2);
-        string s = $"{phase:n4}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.LightGray, clientRect.Right - 8 - sz.Width,
-                 8);
-        }
-        DrawCurve(g, clientRect, Color.Green, X, 1f);
-    }
-
-    static void DrawCurve(Graphics g, RectangleF clientRect, Color color,
-        float[] X, float width = 1f, bool fill = false) {
-
-        var path = new System.Drawing.Drawing2D.GraphicsPath();
-
-        var Curve = new List<PointF>();
-
-        int M = (int)clientRect.Height / 2;
-
-        for (int i = 0; i < X.Length; i++) {
-            var ampl = X[i];
-            if (ampl < -1) ampl = -1;
-            if (ampl > 1) ampl = 1;
-            if (ampl < -1 || ampl > +1) {
-                throw new IndexOutOfRangeException();
-            }
-            float x;
-            x = Surface2D.linf(i, X.Length, clientRect.Width);
-            float y;
-            y = Surface2D.linf(-(float)ampl, 1, M) + M;
-            Curve.Add(new PointF(x, y));
-        }
-
-        path.AddCurve(Curve.ToArray());
-
-        var pen = new Pen(color, width);
-
-        if (fill)
-            g.FillPath(pen.Brush, path);
-        else
-            g.DrawPath(pen, path);
-
-        path.Dispose();
-    }
-
-    static void DrawBars(Color color, Graphics Canvas, RectangleF rect, Complex[] fft, float norm, int samples) {
-        var path = new System.Drawing.Drawing2D.GraphicsPath();
-
-        Canvas.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-
-        int M = (int)rect.Height / 2;
-
-        for (int i = 0; i < samples; i++) {
-            var ampl = 2 * fft[i].Magnitude;
-            if (ampl < -1) ampl = -1;
-            if (ampl > 1) ampl = 1;
-            if (ampl < -1 || ampl > +1) {
-                throw new IndexOutOfRangeException();
-            }
-            int x = Surface2D.linear(i, samples, (int)rect.Width);
-            int y = Surface2D.linear((float)ampl * norm, 1, M) + M;
-            path.AddLine(new PointF(x, y), new PointF(x, y));
-        }
-
-        var brush = new SolidBrush(color);
-        var pen = new Pen(Color.DarkGray, 1);
-
-        Canvas.FillPath(brush, path);
-        Canvas.DrawPath(pen, path);
-
-        pen.Dispose();
-        brush.Dispose();
-
-        path.Dispose();
-    }
-#endif
 }

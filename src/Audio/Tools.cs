@@ -4,11 +4,17 @@ using System.Collections.Generic;
 
 namespace System.Audio {
     public static class Tools {
-        public static float[] Sine(float f, float hz, int samples) {
+        public static float[] Sine(float hz, int samples, params float[] f) {
             float[] X = new float[samples];
             for (int s = 0; s < samples; s++) {
-                var ampl =
-                    System.Math.Sin(f * 2d * System.Math.PI * s * (1d / hz));
+                var ampl = 0d;
+                for (int j = 0; j < f.Length; j++) {
+                    ampl +=
+                        System.Math.Sin(f[j] * 2d * System.Math.PI * s * (1d / hz));
+                }
+                if (f.Length > 0) {
+                    ampl /= f.Length;
+                }
                 X[s] = (float)ampl;
             }
             return X;
