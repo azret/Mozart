@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -14,7 +15,42 @@ unsafe partial class App {
         set => Environment.CurrentDirectory = value;
     }
 
+    static IDictionary<string, Func<App, string, Func<bool>, bool>> _handlers = new Dictionary<string, Func<App, string, Func<bool>, bool>>();
+
+    static void InitCliHandlers() {
+        _handlers["--mic"] = (
+            App app,
+            string cliString,
+            Func<bool> IsTerminated) => {
+                return StartMicWinUI(
+                    app,
+                    cliString,
+                    IsTerminated);
+            };
+        _handlers["--curves"] = (
+            App app,
+            string cliString,
+            Func<bool> IsTerminated) => {
+                app.StartWin32UI<System.Audio.IStream>(null,
+                        Curves.DrawCurves, () => null, "Curves",
+                        Color.White,
+                        Resources.Oxygen,
+                        new Size(623, 400));
+                return true;
+            };
+        _handlers["--fit"] = (
+            App app,
+            string cliString,
+            Func<bool> IsTerminated) => {
+                return System.Ai.CBOW.Train(
+                    app.CurrentDirectory,
+                    "*.*",
+                    IsTerminated);
+            };
+    }
+
     static void Main() {
+        InitCliHandlers();
         RunCli(new App());
     }
 
@@ -72,42 +108,7 @@ unsafe partial class App {
             App app,
             string cliString,
             Func<bool> IsTerminated) {
-        if (cliString.StartsWith("--fit", StringComparison.OrdinalIgnoreCase)
-                    || cliString.StartsWith("fit", StringComparison.OrdinalIgnoreCase)) {
-            double[] W = new double[13];
-            global::Random.Randomize(W);
-            System.Ai.Fit.train(
-                0.01,
-                Sample: () => {
-                    var X = new double[W.Length];
-                    return X;
-                },
-                W: W,
-                F: (X) => {
-                    return false;
-                },
-                SetLoss: (loss) => {
-                    Console.WriteLine(loss);
-                },
-                HasCtrlBreak: IsTerminated);
-        } else if (cliString.StartsWith("--cbow", StringComparison.OrdinalIgnoreCase)
-                    || cliString.StartsWith("cbow", StringComparison.OrdinalIgnoreCase)) {
-            return System.Ai.CBOW.Train(
-                app.CurrentDirectory,
-                "*.*",
-                IsTerminated);
-        } else if (cliString.StartsWith("--mic", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("mic", StringComparison.OrdinalIgnoreCase)) {
-            return StartMicWinUI(
-                app,
-                cliString,
-                IsTerminated);
-        } else if (cliString.StartsWith("--curves", StringComparison.OrdinalIgnoreCase) || cliString.StartsWith("curves", StringComparison.OrdinalIgnoreCase)) {
-            app.StartWin32UI<System.Audio.IStream>(null,
-                Curves.DrawCurves, () => null, "Curves",
-                Color.White,
-                Resources.Oxygen,
-                new Size(623, 400));
-        } else if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
+        if (cliString.StartsWith("cd", StringComparison.OrdinalIgnoreCase)) {
             var dir = cliString.Remove(0, "cd".Length).Trim();
             if (Directory.Exists(dir)) {
                 app.CurrentDirectory = dir;
@@ -115,6 +116,11 @@ unsafe partial class App {
         } else if (cliString.StartsWith("cls", StringComparison.OrdinalIgnoreCase)) {
             Console.Clear();
         } else {
+            foreach (var h in _handlers) {
+                if (cliString.StartsWith(h.Key, StringComparison.OrdinalIgnoreCase)) {
+                    return h.Value(app, cliString, IsTerminated);
+                }
+            }
             string outputFileName = @"D:\Mozart\src\App.cbow";
             var Model = System.Ai.CBOW.LoadFromFile(outputFileName, System.Ai.CBOW.SIZE,
                     out string fmt, out int dims);

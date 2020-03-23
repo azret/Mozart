@@ -97,7 +97,7 @@ namespace System.Ai {
 
             var lex = new CSharp();
 
-            string outputFileName = @"D:\Mozart\src\App.cbow";
+            string outputFileName = @"D:\Mozart\Mozart.cbow";
 
             Matrix<Word> Model = null;
 
