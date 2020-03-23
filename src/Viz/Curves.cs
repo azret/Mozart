@@ -130,7 +130,7 @@ unsafe partial class Curves {
         float[] X =
             Source?.Read();
         if (X == null) return;
-        DrawFunction(g, r, (i, cc) => Envelopes.Hann(i, cc) * X[i * X.Length / cc], Brushes.Red);
+        DrawFunction(g, r, (i, cc) => Envelopes.Hann(i, cc) * X[i * X.Length / cc], Brushes.DarkViolet);
         string s = $"{phase:n4}s";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
