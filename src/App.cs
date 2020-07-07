@@ -142,7 +142,7 @@ unsafe partial class App {
             try {
                 hWnd = new Plot2D<T>(controller, title,
                     onDrawFrame,
-                    TimeSpan.FromMilliseconds(1000),
+                    TimeSpan.FromMilliseconds(300),
                     onGetFrame, bgColor, hIcon, size);
                 AddWinMMHandle(handl = hWnd.hWnd);
                 hWnd.Show();

@@ -13,6 +13,7 @@ unsafe partial class Curves {
         DrawFunction(g, r, Envelopes.Hann, Brushes.Red);
         DrawFunction(g, r, Envelopes.Parabola, Brushes.Green);
         DrawFunction(g, r, Envelopes.Harris, Brushes.Orange);
+        DrawPhase(g, r, t);
     }
 
     private static void DrawPaper(Graphics g,
@@ -130,14 +131,12 @@ unsafe partial class Curves {
         float[] X =
             Source?.Read();
         if (X == null) return;
+        DrawFunction(g, r, (i, cc) => Envelopes.Hann(i, cc) * X[i * X.Length / cc], Brushes.DarkOrange);
+        var fft = Complex.FFT(X);
+        X = Complex.InverseFFT(fft);
         DrawFunction(g, r, (i, cc) => Envelopes.Hann(i, cc) * X[i * X.Length / cc], Brushes.DarkViolet);
-        string s = $"{phase:n4}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
-                 8);
-        }
+
+        DrawLabels(g, r, Source.ElapsedTime, hz, X);
     }
 
     public static void DrawFFT(Graphics g,
@@ -152,13 +151,8 @@ unsafe partial class Curves {
         if (X == null) return;
         var fft = Complex.FFT(X);
         var peaks = Tools.Peaks(fft);
-        int startBin = 0,
-                endBin = 0;
         DrawBars(g, r, 16, 16,
             (i) => {
-                if (i > endBin) {
-                    endBin = i;
-                }
                 if (i >= 0 && i < fft.Length) {
                     return (2 * fft[i].Magnitude);
                 } else {
@@ -173,15 +167,10 @@ unsafe partial class Curves {
                 }
             },
             Brushes.MediumVioletRed);
-
         Tools.CleanInPlace(fft, hz);
         peaks = Tools.Peaks(fft);
-
         DrawBars(g, r, 16, 16,
             (i) => {
-                if (i > endBin) {
-                    endBin = i;
-                }
                 if (i >= 0 && i < fft.Length) {
                     return (-2 * fft[i].Magnitude);
                 } else {
@@ -196,6 +185,8 @@ unsafe partial class Curves {
                 }
             },
             Brushes.PaleVioletRed);
+        int startBin = 0,
+                endBin = (int)r.Width / 16;
         DrawLabels(
             g,
             r,
@@ -203,16 +194,8 @@ unsafe partial class Curves {
             hz, fft, startBin, endBin);
     }
 
-    static void DrawLabels(Graphics g, RectangleF r, float phase, float hz, Complex[] fft,
-        int startBin, int endBin) {
-        string s = $"{phase:n2}s";
-        if (s != null) {
-            var sz = g.MeasureString(s, Plot2D.Font);
-            g.DrawString(
-                s, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
-                 8);
-        }
-        s = $"{fft.Length} at {hz}Hz";
+    static void DrawLabels(Graphics g, RectangleF r, float phase, float hz, Complex[] fft, int startBin, int endBin) {
+        string s = $"{fft.Length} at {hz}Hz";
         if (s != null) {
             var sz = g.MeasureString(s, Plot2D.Font);
             g.DrawString(
@@ -239,6 +222,26 @@ unsafe partial class Curves {
             g.DrawString(
                 s, Plot2D.Font, Brushes.DarkGray, r.Left + r.Width / 2 - sz.Width / 2,
                   r.Bottom - 8 - sz.Height);
+        }
+    }
+
+    static void DrawLabels(Graphics g, RectangleF r, float phase, float hz, float[] X) {
+        string szRate = $"{X.Length} at {hz}Hz";
+        if (szRate != null) {
+            var sz = g.MeasureString(szRate, Plot2D.Font);
+            g.DrawString(
+                szRate, Plot2D.Font, Brushes.DarkGray, r.Left + 8,
+                 8);
+        }
+    }
+
+    static void DrawPhase(Graphics g, RectangleF r, float phase) {
+        string szPhase = $"{phase:n2}s";
+        if (szPhase != null) {
+            var sz = g.MeasureString(szPhase, Plot2D.Font);
+            g.DrawString(
+                szPhase, Plot2D.Font, Brushes.DarkGray, r.Right - 8 - sz.Width,
+                 8);
         }
     }
 }

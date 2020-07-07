@@ -26,7 +26,6 @@ namespace System.Audio {
                     * (float)Envelopes.Hann(s, samples);
             }
         }
-
         public static bool[] Peaks(Complex[] X) {
             bool[] peaks = new bool[X.Length];
             bool[] troughs = new bool[X.Length];

@@ -7,3 +7,5 @@
 *.user
 /bin
 /.vs
+/src/.vs
+/src/obj/Release
